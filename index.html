@@ -86,7 +86,7 @@ const DAY_LABELS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 const BLOCK_TYPES = {
   deep:     { color: "#ff6b35", label: "DEEP WORK" },
   admin:    { color: "#fbbf24", label: "ADMIN" },
-  sales:    { color: "#ef4444", label: "SALES" },
+  sales:    { color: "#ef4444", label: "MEETING" },
   outreach: { color: "#a855f7", label: "OUTREACH" },
   content:  { color: "#06b6d4", label: "CONTENT" },
   learn:    { color: "#8b5cf6", label: "LEARN" },
@@ -100,42 +100,52 @@ const BLOCK_TYPES = {
   off:      { color: "#22c55e", label: "OFF" },
 };
 
-const buildDay = (calisDay) => ({
-  type: "BUILD",
-  goal: "Ship one major client deliverable. Send proof to client.",
+// NICHE OUTREACH TIMING:
+// • Builders (next niche): 6:00–7:30 AM (before site), Fri AM (week wind-down)
+// • Detailers (current niche): 5:00–6:30 PM (after jobs), 12:00–1:00 PM (lunch DMs)
+// • Send emails/LinkedIn early — read on next phone check
+// • Phone calls best at 8–9 AM or 5–7 PM windows
+
+const buildSellDay = (calisDay) => ({
+  type: "BUILD-SELL",
+  goal: "Ship one major client deliverable + 30 outreach touches + hit every booked call.",
   blocks: [
     { start: "05:00", end: "05:30", name: "Calisthenics — " + calisDay, type: "workout", desc: "Morning bodyweight routine" },
     { start: "05:30", end: "05:45", name: "Shower + Coffee", type: "personal", desc: "Quick reset" },
     { start: "05:45", end: "06:00", name: "Word", type: "word", desc: "Today's reading + reflection" },
-    { start: "06:00", end: "09:00", name: "Build Block 1", type: "deep", desc: "Deepest client work — creative production, system setup, ad builds. DND on." },
-    { start: "09:00", end: "09:15", name: "Break", type: "break", desc: "15 min walk outside, no screens" },
-    { start: "09:15", end: "12:00", name: "Build Block 2", type: "deep", desc: "Continued client work" },
-    { start: "12:00", end: "12:45", name: "Lunch", type: "break", desc: "Real food, away from desk" },
-    { start: "12:45", end: "15:30", name: "Build Block 3", type: "deep", desc: "Finish day's deliverables" },
-    { start: "15:30", end: "15:45", name: "Break", type: "break", desc: "15 min, snack, walk" },
-    { start: "15:45", end: "17:30", name: "Admin Block", type: "admin", desc: "Emails, GHL maintenance, inbox triage, client check-ins" },
-    { start: "17:30", end: "20:00", name: "Build Block 4 / Wrap", type: "deep", desc: "Finish anything outstanding, prep tomorrow" },
-    { start: "20:00", end: "22:00", name: "Personal Time", type: "personal", desc: "Dinner, decompression, family/friends, hobbies" },
+    { start: "06:00", end: "07:00", name: "Builder Outreach (AM)", type: "outreach", desc: "★ PRIME for builders — up early, planning the day before site. Cold emails + LinkedIn. Target: 15 touches." },
+    { start: "07:00", end: "09:30", name: "Build Block 1", type: "deep", desc: "Deepest client work — creative, ad builds, GHL. DND on." },
+    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside, no screens" },
+    { start: "09:45", end: "12:00", name: "Sales Meetings", type: "sales", desc: "Booked discovery + follow-up calls. Mid-morning is the prospect's sweet spot." },
+    { start: "12:00", end: "12:45", name: "Lunch + DM Check", type: "break", desc: "Detailers check phones on lunch break — respond fast to any inbound." },
+    { start: "12:45", end: "15:30", name: "Build Block 2", type: "deep", desc: "Continued client work" },
+    { start: "15:30", end: "15:45", name: "Break", type: "break", desc: "Walk, snack" },
+    { start: "15:45", end: "17:00", name: "Admin Block", type: "admin", desc: "Emails, GHL maintenance, client check-ins" },
+    { start: "17:00", end: "18:30", name: "Detailer Outreach (PM)", type: "outreach", desc: "★ PRIME for detailers — done with jobs, on phones. DMs + follow-up calls. Target: 15 touches." },
+    { start: "18:30", end: "20:00", name: "Build Wrap", type: "deep", desc: "Finish day's deliverables, prep tomorrow" },
+    { start: "20:00", end: "22:00", name: "Personal Time", type: "personal", desc: "Dinner, decompression, family/friends" },
     { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out — 7 hours minimum" },
   ],
 });
 
 const sellDayWithRun = (calisDay, runType) => ({
   type: "SELL",
-  goal: "60+ outreach touches, 2+ pieces of content posted, all booked calls completed.",
+  goal: "50+ outreach touches across both niches. All booked calls. 2 pieces of content posted.",
   blocks: [
     { start: "05:00", end: "05:30", name: "Calisthenics — " + calisDay, type: "workout", desc: "Morning bodyweight routine" },
     { start: "05:30", end: "05:45", name: "Shower + Coffee", type: "personal", desc: "Quick reset" },
     { start: "05:45", end: "06:00", name: "Word", type: "word", desc: "Today's reading + reflection" },
-    { start: "06:00", end: "09:00", name: "Outreach Block 1", type: "outreach", desc: "DMs, cold emails, LinkedIn. Target: 30–40 touches." },
-    { start: "09:00", end: "09:15", name: "Break", type: "break", desc: "Walk outside" },
-    { start: "09:15", end: "12:00", name: "Sales Calls", type: "sales", desc: "Booked discovery/follow-up calls" },
-    { start: "12:00", end: "12:30", name: "Mid-day Run — " + runType, type: "run", desc: "Get outside. Reset body and head." },
-    { start: "12:30", end: "13:00", name: "Shower + Quick Lunch", type: "break", desc: "Eat real food, no screens" },
+    { start: "06:00", end: "07:30", name: "Builder Outreach (AM)", type: "outreach", desc: "★ PRIME for builders. Cold emails + LinkedIn. Target: 20 touches." },
+    { start: "07:30", end: "09:30", name: "Outreach Volume", type: "outreach", desc: "Mass outreach — both niches, all platforms. Target: 20 more touches." },
+    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside" },
+    { start: "09:45", end: "12:00", name: "Sales Meetings", type: "sales", desc: "Booked discovery/follow-up calls. Mid-morning energy peak." },
+    { start: "12:00", end: "12:30", name: "Mid-day Run — " + runType, type: "run", desc: "Reset body and head" },
+    { start: "12:30", end: "13:00", name: "Shower + Lunch + DM Check", type: "break", desc: "Detailers on lunch — respond to inbound DMs fast" },
     { start: "13:00", end: "15:00", name: "Content Block", type: "content", desc: "2 LinkedIn posts, 1 short video, photos of recent work" },
-    { start: "15:00", end: "17:00", name: "Sales Calls 2", type: "sales", desc: "More booked calls" },
-    { start: "17:00", end: "19:00", name: "Outreach Block 2", type: "outreach", desc: "Follow-ups, additional cold outreach" },
-    { start: "19:00", end: "20:00", name: "Pipeline Review", type: "admin", desc: "Update master tracking sheet, set tomorrow's calls" },
+    { start: "15:00", end: "17:00", name: "Sales Meetings 2", type: "sales", desc: "Afternoon booked calls. Builders often free after site close-out." },
+    { start: "17:00", end: "18:30", name: "Detailer Outreach (PM)", type: "outreach", desc: "★ PRIME for detailers — post-job, on phones. Calls + DMs. Target: 15 touches." },
+    { start: "18:30", end: "19:30", name: "Pipeline Review", type: "admin", desc: "Update master tracking, tag follow-ups, set tomorrow's calls" },
+    { start: "19:30", end: "20:00", name: "Plan Tomorrow", type: "plan", desc: "Top 3, calls list, outreach prospects by niche" },
     { start: "20:00", end: "22:00", name: "Personal Time", type: "personal", desc: "Decompress" },
     { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out — 7 hours minimum" },
   ],
@@ -143,19 +153,20 @@ const sellDayWithRun = (calisDay, runType) => ({
 
 const fridayDay = {
   type: "MIXED",
-  goal: "Every client touched. Reports clean. Next week planned. Weekend free.",
+  goal: "Every client touched. Reports clean. Friday meetings closed. Next week planned.",
   blocks: [
     { start: "05:00", end: "06:30", name: "GYM — PUSH Day", type: "workout", desc: "Chest, shoulders, triceps" },
     { start: "06:30", end: "06:50", name: "Shower + Breakfast", type: "personal", desc: "Refuel" },
     { start: "06:50", end: "07:00", name: "Word", type: "word", desc: "Today's reading + reflection" },
-    { start: "07:00", end: "09:30", name: "Wrap Block", type: "deep", desc: "Finish anything outstanding from week's client work" },
+    { start: "07:00", end: "08:00", name: "Builder Outreach (AM)", type: "outreach", desc: "★ Builders winding down their week — Friday AM is good for next-week meetings. Target: 15 touches." },
+    { start: "08:00", end: "09:30", name: "Wrap Block", type: "deep", desc: "Finish anything outstanding from week's client work" },
     { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside" },
-    { start: "09:45", end: "11:45", name: "Reporting Block", type: "admin", desc: "Pull weekly numbers from each client. Update master sheet." },
-    { start: "11:45", end: "12:45", name: "Client Comms", type: "admin", desc: "Weekly check-ins to all 3 clients with updates and questions" },
-    { start: "12:45", end: "13:30", name: "Lunch", type: "break", desc: "Real food, away from desk" },
-    { start: "13:30", end: "15:30", name: "Learning Block", type: "learn", desc: "2 hours: Meta Ads, Google Ads, GHL, copy, sales" },
-    { start: "15:30", end: "17:30", name: "Sales — Close Push", type: "sales", desc: "Last-chance follow-ups, 'sign before weekend' close pushes" },
-    { start: "17:30", end: "19:00", name: "Next Week Planning", type: "plan", desc: "Block out Mon–Fri, review pipeline, set sales targets" },
+    { start: "09:45", end: "11:30", name: "Reporting Block", type: "admin", desc: "Pull weekly numbers from each client. Update master sheet." },
+    { start: "11:30", end: "12:30", name: "Client Comms", type: "admin", desc: "Weekly check-ins to all clients with updates and questions" },
+    { start: "12:30", end: "13:15", name: "Lunch + DM Check", type: "break", desc: "Real food, away from desk. Check inbound DMs." },
+    { start: "13:15", end: "14:45", name: "Learning Block", type: "learn", desc: "Meta Ads, Google Ads, GHL, copy, sales" },
+    { start: "14:45", end: "17:30", name: "Friday Sales Meetings", type: "sales", desc: "Booked Friday calls + close-push to anyone you talked with this week. 'Sign before weekend' energy." },
+    { start: "17:30", end: "19:00", name: "Next Week Planning", type: "plan", desc: "Block out Mon–Fri, review pipeline, list next week's outreach prospects by niche" },
     { start: "19:00", end: "20:00", name: "Inbox Zero", type: "admin", desc: "Clear all emails, DMs, GHL conversations" },
     { start: "20:00", end: "22:00", name: "Personal — Go Out", type: "personal", desc: "See people, do something fun" },
     { start: "22:00", end: "30:00", name: "Sleep", type: "sleep", desc: "Lights out — sleep until 6 AM" },
@@ -169,7 +180,7 @@ const saturdayDay = {
     { start: "06:00", end: "07:30", name: "GYM — LEGS Day", type: "workout", desc: "Squats, deadlifts, lunges, calves" },
     { start: "07:30", end: "08:00", name: "Shower + Big Breakfast", type: "personal", desc: "Real meal — earned it" },
     { start: "08:00", end: "08:15", name: "Word", type: "word", desc: "Today's reading — stewardship theme" },
-    { start: "08:15", end: "12:00", name: "Catch-up Block", type: "deep", desc: "Anything that slipped during the week" },
+    { start: "08:15", end: "12:00", name: "Catch-up Block", type: "deep", desc: "Anything that slipped + prospect research for next week's outreach (build the builder list)" },
     { start: "12:00", end: "22:00", name: "Long Personal Block", type: "personal", desc: "Errands, social, hobbies, life" },
     { start: "22:00", end: "30:00", name: "Sleep", type: "sleep", desc: "Lights out" },
   ],
@@ -193,10 +204,10 @@ const sundayDay = {
 };
 
 const SCHEDULE = {
-  monday:    buildDay("PUSH"),
+  monday:    buildSellDay("PUSH"),
   tuesday:   sellDayWithRun("PULL", "EASY"),
-  wednesday: buildDay("LEGS"),
-  thursday:  { ...sellDayWithRun("CORE", "INTERVALS"), goal: "5+ booked calls. Most prospects who got Tuesday outreach respond by today." },
+  wednesday: buildSellDay("LEGS"),
+  thursday:  { ...sellDayWithRun("CORE", "INTERVALS"), goal: "50+ outreach touches. All booked calls hit. Most prospects who got Tuesday outreach respond by today." },
   friday:    fridayDay,
   saturday:  saturdayDay,
   sunday:    sundayDay,
