@@ -17,411 +17,350 @@
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   input, button, textarea { font-family: inherit; }
   button { -webkit-appearance: none; }
-  .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
-  .mono { font-family: 'JetBrains Mono', monospace; }
+  .display { font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 0.04em; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
   .serif { font-family: Georgia, 'Times New Roman', serif; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(255,107,53,0.6); } 70% { box-shadow: 0 0 0 12px rgba(255,107,53,0); } 100% { box-shadow: 0 0 0 0 rgba(255,107,53,0); } }
   .pulse-ring { animation: pulse-ring 2s infinite; }
   @keyframes slide-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .slide-up { animation: slide-up 0.3s ease-out; }
+  .slide-up { animation: slide-up 0.25s ease-out; }
   input[type="time"] { color-scheme: dark; }
   .boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0a0a0a; color: #fafafa; z-index: 9999; }
   .boot.gone { display: none; }
+  .card { border-radius: 16px; background: rgba(20,20,20,0.45); border: 1px solid #1f1f1f; }
+  .tap { transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease; }
+  .tap:active { transform: scale(0.985); }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <div id="boot" class="boot">
   <div class="display" style="font-size:48px;color:#ff6b35;letter-spacing:0.1em;">SPRINT</div>
-  <div style="font-size:11px;color:#525252;margin-top:8px;letter-spacing:0.18em;text-transform:uppercase;">Loading…</div>
+  <div style="font-size:11px;color:#525252;margin-top:8px;letter-spacing:0.18em;text-transform:uppercase;">Loading...</div>
 </div>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
-const { useState, useEffect } = React;
+const { useEffect, useMemo, useState } = React;
 
 const C = {
   bg: "#0a0a0a", surface: "#141414", surfaceAlt: "#1a1a1a",
   border: "#1f1f1f", borderStrong: "#2a2a2a",
   text: "#fafafa", textMuted: "#a3a3a3", textDim: "#737373",
   textFaint: "#525252", veryFaint: "#404040",
-  accent: "#ff6b35", accentDim: "rgba(255,107,53,0.15)", accentBorder: "rgba(255,107,53,0.4)",
+  accent: "#ff6b35", accentDim: "rgba(255,107,53,0.15)", accentBorder: "rgba(255,107,53,0.42)",
   green: "#22c55e", greenDim: "rgba(34,197,94,0.1)", greenBorder: "rgba(34,197,94,0.3)",
-  red: "#ef4444", amber: "#fbbf24", gold: "#d4a574",
+  red: "#ef4444", redDim: "rgba(239,68,68,0.12)", amber: "#fbbf24", amberDim: "rgba(251,191,36,0.12)",
+  gold: "#d4a574", purple: "#a855f7", cyan: "#06b6d4", blue: "#3b82f6",
 };
 
 function Icon({ name, size = 24, strokeWidth = 2, fill = "none", color = "currentColor", style }) {
   const props = { width: size, height: size, viewBox: "0 0 24 24", fill, stroke: color, strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", style, "aria-hidden": true };
   switch (name) {
-    case "clock":      return <svg {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-    case "calendar":   return <svg {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
-    case "dumbbell":   return <svg {...props}><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 22l4-4"/><path d="M2 6l4-4"/><path d="M3 10l7-7"/><path d="M14 21l7-7"/></svg>;
-    case "book":       return <svg {...props}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
-    case "checksquare":return <svg {...props}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
+    case "clock": return <svg {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+    case "calendar": return <svg {...props}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+    case "dumbbell": return <svg {...props}><path d="M6.5 6.5l11 11"/><path d="M21 21l-1-1"/><path d="M3 3l1 1"/><path d="M18 22l4-4"/><path d="M2 6l4-4"/><path d="M3 10l7-7"/><path d="M14 21l7-7"/></svg>;
+    case "book": return <svg {...props}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
+    case "checksquare": return <svg {...props}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>;
     case "chevronright": return <svg {...props}><polyline points="9 18 15 12 9 6"/></svg>;
-    case "chevronleft":  return <svg {...props}><polyline points="15 18 9 12 15 6"/></svg>;
-    case "plus":   return <svg {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-    case "minus":  return <svg {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-    case "check":  return <svg {...props}><polyline points="20 6 9 17 4 12"/></svg>;
-    case "x":      return <svg {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-    case "flame":  return <svg {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
-    case "moon":   return <svg {...props}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
-    case "sun":    return <svg {...props}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+    case "chevronleft": return <svg {...props}><polyline points="15 18 9 12 15 6"/></svg>;
+    case "plus": return <svg {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case "minus": return <svg {...props}><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case "check": return <svg {...props}><polyline points="20 6 9 17 4 12"/></svg>;
+    case "x": return <svg {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case "flame": return <svg {...props}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
+    case "moon": return <svg {...props}><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>;
+    case "sun": return <svg {...props}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>;
     case "coffee": return <svg {...props}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>;
     case "target": return <svg {...props}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-    case "play":   return <svg {...props} fill={color}><polygon points="5 3 19 12 5 21 5 3"/></svg>;
-    case "pause":  return <svg {...props} fill={color}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>;
-    case "rotateccw": return <svg {...props}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>;
-    case "trophy": return <svg {...props}><line x1="6" y1="9" x2="18" y2="9"/><line x1="6" y1="9" x2="6" y2="14"/><line x1="18" y1="9" x2="18" y2="14"/><path d="M6 14a6 6 0 0 0 12 0"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>;
+    case "play": return <svg {...props} fill={color}><polygon points="5 3 19 12 5 21 5 3"/></svg>;
+    case "pause": return <svg {...props} fill={color}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>;
+    case "rotateccw": return <svg {...props}><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>;
+    case "trophy": return <svg {...props}><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M5 5H3v2a4 4 0 0 0 4 4"/><path d="M19 5h2v2a4 4 0 0 1-4 4"/></svg>;
     case "circle": return <svg {...props}><circle cx="12" cy="12" r="10"/></svg>;
+    case "shield": return <svg {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+    case "phone": return <svg {...props}><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>;
+    case "ban": return <svg {...props}><circle cx="12" cy="12" r="10"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg>;
+    case "list": return <svg {...props}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>;
+    case "zap": return <svg {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+    case "lock": return <svg {...props}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
     default: return null;
   }
 }
+
 const DAYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
 const DAY_LABELS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 
 const BLOCK_TYPES = {
-  deep:     { color: "#ff6b35", label: "DEEP WORK" },
-  admin:    { color: "#fbbf24", label: "ADMIN" },
-  sales:    { color: "#ef4444", label: "MEETING" },
-  outreach: { color: "#a855f7", label: "OUTREACH" },
-  content:  { color: "#06b6d4", label: "CONTENT" },
-  learn:    { color: "#8b5cf6", label: "LEARN" },
-  break:    { color: "#525252", label: "BREAK" },
-  personal: { color: "#22c55e", label: "PERSONAL" },
-  workout:  { color: "#ec4899", label: "WORKOUT" },
-  run:      { color: "#f97316", label: "RUN" },
-  word:     { color: "#d4a574", label: "WORD" },
-  sleep:    { color: "#475569", label: "SLEEP" },
-  plan:     { color: "#10b981", label: "PLAN" },
-  off:      { color: "#22c55e", label: "OFF" },
+  deep: { color: C.accent, label: "DEEP WORK" },
+  admin: { color: C.amber, label: "ADMIN" },
+  sales: { color: C.red, label: "CALLS" },
+  outreach: { color: C.purple, label: "OUTREACH" },
+  content: { color: C.cyan, label: "CONTENT" },
+  learn: { color: "#8b5cf6", label: "LEARN" },
+  break: { color: C.textFaint, label: "RESET" },
+  personal: { color: C.green, label: "PERSONAL" },
+  workout: { color: "#ec4899", label: "WORKOUT" },
+  run: { color: "#f97316", label: "RUN" },
+  word: { color: C.gold, label: "WORD" },
+  sleep: { color: "#475569", label: "SLEEP" },
+  plan: { color: "#10b981", label: "PLAN" },
+  social: { color: C.blue, label: "REFOCUS" },
+  off: { color: C.green, label: "OFF" },
 };
 
-// NICHE OUTREACH TIMING:
-// • Builders (next niche): 6:00–7:30 AM (before site), Fri AM (week wind-down)
-// • Detailers (current niche): 5:00–6:30 PM (after jobs), 12:00–1:00 PM (lunch DMs)
-// • Send emails/LinkedIn early — read on next phone check
-// • Phone calls best at 8–9 AM or 5–7 PM windows
+const MON_THU_RULES = [
+  "Movement loop every 25 min",
+  "One Tab Rule",
+  "Micro-task the block",
+  "Focus anchor before starting",
+  "Anchor object visible during deep work",
+  "Two-zone workspace",
+  "No social outside approved Refocus windows",
+  "No pacing except reset block",
+];
 
-const buildSellDay = (calisDay) => ({
-  type: "BUILD-SELL",
-  goal: "Ship one major client deliverable + 30 outreach touches + hit every booked call.",
+const founderWeekday = (calisDay, dayGoal) => ({
+  type: "FOUNDER OS",
+  goal: dayGoal,
   blocks: [
-    { start: "05:00", end: "05:30", name: "Calisthenics — " + calisDay, type: "workout", desc: "Morning bodyweight routine" },
-    { start: "05:30", end: "05:45", name: "Shower + Coffee", type: "personal", desc: "Quick reset" },
-    { start: "05:45", end: "06:00", name: "Word", type: "word", desc: "Today's reading + reflection" },
-    { start: "06:00", end: "07:00", name: "Builder Outreach (AM)", type: "outreach", desc: "★ PRIME for builders — up early, planning the day before site. Cold emails + LinkedIn. Target: 15 touches." },
-    { start: "07:00", end: "09:30", name: "Build Block 1", type: "deep", desc: "Deepest client work — creative, ad builds, GHL. DND on." },
-    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside, no screens" },
-    { start: "09:45", end: "12:00", name: "Sales Meetings", type: "sales", desc: "Booked discovery + follow-up calls. Mid-morning is the prospect's sweet spot." },
-    { start: "12:00", end: "12:45", name: "Lunch + DM Check", type: "break", desc: "Detailers check phones on lunch break — respond fast to any inbound." },
-    { start: "12:45", end: "15:30", name: "Build Block 2", type: "deep", desc: "Continued client work" },
-    { start: "15:30", end: "15:45", name: "Break", type: "break", desc: "Walk, snack" },
-    { start: "15:45", end: "17:00", name: "Admin Block", type: "admin", desc: "Emails, GHL maintenance, client check-ins" },
-    { start: "17:00", end: "18:30", name: "Detailer Outreach (PM)", type: "outreach", desc: "★ PRIME for detailers — done with jobs, on phones. DMs + follow-up calls. Target: 15 touches." },
-    { start: "18:30", end: "20:00", name: "Build Wrap", type: "deep", desc: "Finish day's deliverables, prep tomorrow" },
-    { start: "20:00", end: "22:00", name: "Personal Time", type: "personal", desc: "Dinner, decompression, family/friends" },
-    { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out — 7 hours minimum" },
-  ],
-});
-
-const sellDayWithRun = (calisDay, runType) => ({
-  type: "SELL",
-  goal: "50+ outreach touches across both niches. All booked calls. 2 pieces of content posted.",
-  blocks: [
-    { start: "05:00", end: "05:30", name: "Calisthenics — " + calisDay, type: "workout", desc: "Morning bodyweight routine" },
-    { start: "05:30", end: "05:45", name: "Shower + Coffee", type: "personal", desc: "Quick reset" },
-    { start: "05:45", end: "06:00", name: "Word", type: "word", desc: "Today's reading + reflection" },
-    { start: "06:00", end: "07:30", name: "Builder Outreach (AM)", type: "outreach", desc: "★ PRIME for builders. Cold emails + LinkedIn. Target: 20 touches." },
-    { start: "07:30", end: "09:30", name: "Outreach Volume", type: "outreach", desc: "Mass outreach — both niches, all platforms. Target: 20 more touches." },
-    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside" },
-    { start: "09:45", end: "12:00", name: "Sales Meetings", type: "sales", desc: "Booked discovery/follow-up calls. Mid-morning energy peak." },
-    { start: "12:00", end: "12:30", name: "Mid-day Run — " + runType, type: "run", desc: "Reset body and head" },
-    { start: "12:30", end: "13:00", name: "Shower + Lunch + DM Check", type: "break", desc: "Detailers on lunch — respond to inbound DMs fast" },
-    { start: "13:00", end: "15:00", name: "Content Block", type: "content", desc: "2 LinkedIn posts, 1 short video, photos of recent work" },
-    { start: "15:00", end: "17:00", name: "Sales Meetings 2", type: "sales", desc: "Afternoon booked calls. Builders often free after site close-out." },
-    { start: "17:00", end: "18:30", name: "Detailer Outreach (PM)", type: "outreach", desc: "★ PRIME for detailers — post-job, on phones. Calls + DMs. Target: 15 touches." },
-    { start: "18:30", end: "19:30", name: "Pipeline Review", type: "admin", desc: "Update master tracking, tag follow-ups, set tomorrow's calls" },
-    { start: "19:30", end: "20:00", name: "Plan Tomorrow", type: "plan", desc: "Top 3, calls list, outreach prospects by niche" },
-    { start: "20:00", end: "22:00", name: "Personal Time", type: "personal", desc: "Decompress" },
-    { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out — 7 hours minimum" },
+    { start: "05:00", end: "05:30", name: "Calisthenics - " + calisDay, type: "workout", desc: "No screens. Body first, mind follows.", rules: ["No screens", "Phone away", "Complete the full circuit"] },
+    { start: "05:30", end: "06:00", name: "Shower / Coffee / Word", type: "word", desc: "Bible app only. No feeds, no messages, no browsing.", rules: ["Bible app only", "No social", "No inbox", "Set focus anchor"] },
+    { start: "06:00", end: "07:30", name: "Deep Work #1 - Builder Outreach", type: "outreach", desc: "Prime builder window. One Tab Rule, movement loop every 25 min, no pacing, no social.", rules: ["One Tab Rule", "Movement loop every 25 min", "No pacing", "No social", "15+ builder touches"] },
+    { start: "07:30", end: "09:30", name: "Deep Work #2 - Build / Outreach", type: "deep", desc: "Ship client work or push outreach. Keep the tab stack clean.", rules: ["One Tab Rule", "Micro-tasks", "Anchor object", "No social"] },
+    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk, water, breathe. No scroll reset.", rules: ["No social", "No meal screen", "Move deliberately"] },
+    { start: "09:45", end: "12:00", name: "Sales Meetings", type: "sales", desc: "Calls only. Mid-morning is for booked discovery, follow-ups, and close work.", rules: ["Calls only", "CRM only", "No social", "Log every next step"] },
+    { start: "12:00", end: "13:00", name: "Lunch / Run", type: "run", desc: "No screens while eating. Optional 10-min social only with 1 Refocus unblock.", rules: ["No screens while eating", "Run or walk", "Optional 10-min Refocus only", "Back by 1:00 PM"] },
+    { start: "13:00", end: "14:30", name: "Deep Work #3A - Execution", type: "deep", desc: "Execution block. Build the thing that moves revenue.", rules: ["One Tab Rule", "Micro-tasks", "Movement loop", "No social"] },
+    { start: "14:30", end: "15:00", name: "Reset Block", type: "break", desc: "No screens. Intentional pacing is allowed here only.", rules: ["No screens", "Intentional pacing allowed", "Reset your body", "No social"] },
+    { start: "15:00", end: "16:00", name: "Deep Work #3B - Creative / Systems", type: "deep", desc: "Creative improvements, systems, automations, or offer work.", rules: ["One Tab Rule", "Anchor object", "No pacing", "No social"] },
+    { start: "16:00", end: "17:00", name: "Light Work / Calls", type: "admin", desc: "Light client updates, callbacks, inbox triage, and prep for PM outreach.", rules: ["Calls and admin only", "No social", "Clear next actions"] },
+    { start: "17:00", end: "18:30", name: "Deep Work #4 - Detailer Outreach", type: "outreach", desc: "Prime detailer window. Calls, DMs, follow-ups. Target 15 touches.", rules: ["One Tab Rule", "Detailer outreach only", "No social", "15+ touches"] },
+    { start: "18:30", end: "20:00", name: "Wrap / Pipeline Review", type: "plan", desc: "Update pipeline, tag follow-ups, set tomorrow's call list.", rules: ["Pipeline clean", "Tomorrow staged", "No social"] },
+    { start: "20:00", end: "20:30", name: "Controlled Social Window", type: "social", desc: "One 30-min Refocus unblock. Timer on. Stop clean.", rules: ["One 30-min unblock", "Timer on", "No second window", "End at 8:30"] },
+    { start: "20:30", end: "22:00", name: "Personal / No Social", type: "personal", desc: "No social. Phone outside bedroom. Prepare for lights out.", rules: ["No social", "Phone outside bedroom", "Prep tomorrow", "Lights out at 10"] },
+    { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out. Phone outside bedroom.", rules: ["Phone outside bedroom", "No screens", "Protect tomorrow"] },
   ],
 });
 
 const fridayDay = {
   type: "MIXED",
-  goal: "Every client touched. Reports clean. Friday meetings closed. Next week planned.",
+  goal: "Every client touched. Reports clean. Friday meetings closed. No social until 5:30 PM.",
   blocks: [
-    { start: "05:00", end: "06:30", name: "GYM — PUSH Day", type: "workout", desc: "Chest, shoulders, triceps" },
-    { start: "06:30", end: "06:50", name: "Shower + Breakfast", type: "personal", desc: "Refuel" },
-    { start: "06:50", end: "07:00", name: "Word", type: "word", desc: "Today's reading + reflection" },
-    { start: "07:00", end: "08:00", name: "Builder Outreach (AM)", type: "outreach", desc: "★ Builders winding down their week — Friday AM is good for next-week meetings. Target: 15 touches." },
-    { start: "08:00", end: "09:30", name: "Wrap Block", type: "deep", desc: "Finish anything outstanding from week's client work" },
-    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside" },
-    { start: "09:45", end: "11:30", name: "Reporting Block", type: "admin", desc: "Pull weekly numbers from each client. Update master sheet." },
-    { start: "11:30", end: "12:30", name: "Client Comms", type: "admin", desc: "Weekly check-ins to all clients with updates and questions" },
-    { start: "12:30", end: "13:15", name: "Lunch + DM Check", type: "break", desc: "Real food, away from desk. Check inbound DMs." },
-    { start: "13:15", end: "14:45", name: "Learning Block", type: "learn", desc: "Meta Ads, Google Ads, GHL, copy, sales" },
-    { start: "14:45", end: "17:30", name: "Friday Sales Meetings", type: "sales", desc: "Booked Friday calls + close-push to anyone you talked with this week. 'Sign before weekend' energy." },
-    { start: "17:30", end: "19:00", name: "Next Week Planning", type: "plan", desc: "Block out Mon–Fri, review pipeline, list next week's outreach prospects by niche" },
-    { start: "19:00", end: "20:00", name: "Inbox Zero", type: "admin", desc: "Clear all emails, DMs, GHL conversations" },
-    { start: "20:00", end: "22:00", name: "Personal — Go Out", type: "personal", desc: "See people, do something fun" },
-    { start: "22:00", end: "30:00", name: "Sleep", type: "sleep", desc: "Lights out — sleep until 6 AM" },
+    { start: "05:00", end: "06:30", name: "Gym - Push Day", type: "workout", desc: "Chest, shoulders, triceps. No social.", rules: ["No social", "No scrolling", "Train hard"] },
+    { start: "06:30", end: "07:00", name: "Shower / Breakfast / Word", type: "word", desc: "Word first, then clean food. Bible app only during Word.", rules: ["Bible app only", "No meal screens", "No social"] },
+    { start: "07:00", end: "08:00", name: "Builder Outreach", type: "outreach", desc: "Friday AM is strong for next-week meetings. Target 15 touches.", rules: ["One Tab Rule", "No social", "15+ builder touches"] },
+    { start: "08:00", end: "09:30", name: "Wrap Block", type: "deep", desc: "Finish anything outstanding from the week's client work.", rules: ["One Tab Rule", "Micro-tasks", "No social"] },
+    { start: "09:30", end: "09:45", name: "Break", type: "break", desc: "Walk outside. No scroll reset.", rules: ["No social", "Move"] },
+    { start: "09:45", end: "11:30", name: "Reporting Block", type: "admin", desc: "Pull weekly numbers from each client. Update master sheet.", rules: ["Reports only", "No social", "No extra tabs"] },
+    { start: "11:30", end: "12:30", name: "Client Comms", type: "admin", desc: "Weekly check-ins to all clients with updates and questions.", rules: ["Client comms only", "No social"] },
+    { start: "12:30", end: "13:15", name: "Lunch", type: "break", desc: "Real food, away from desk. No screens while eating.", rules: ["No meal screens", "No social"] },
+    { start: "13:15", end: "14:45", name: "Learning Block", type: "learn", desc: "Meta Ads, Google Ads, GHL, copy, sales.", rules: ["One Tab Rule", "Notes captured", "No social"] },
+    { start: "14:45", end: "17:30", name: "Friday Sales Meetings", type: "sales", desc: "Booked Friday calls and close-push. No social until this block ends.", rules: ["Calls only", "No social until 5:30", "Log follow-ups"] },
+    { start: "17:30", end: "19:00", name: "Next Week Planning", type: "plan", desc: "Plan Mon-Fri, review pipeline, list next week's prospects.", rules: ["Up to 3 Refocus unblocks after 5:30", "1 hour between unblocks", "Plan first"] },
+    { start: "19:00", end: "20:00", name: "Inbox Zero", type: "admin", desc: "Clear email, DMs, GHL conversations.", rules: ["Inbox only", "No endless social", "Timer if unblocked"] },
+    { start: "20:00", end: "22:00", name: "Personal - Go Out", type: "personal", desc: "Social is allowed only inside Refocus limits.", rules: ["Max 3 total unblocks", "30 min each", "Phone away at bed"] },
+    { start: "22:00", end: "30:00", name: "Sleep", type: "sleep", desc: "Lights out. Sleep until 6 AM.", rules: ["Phone outside bedroom", "No screens"] },
   ],
 };
 
 const saturdayDay = {
   type: "RECOVERY+",
-  goal: "Catch up on anything that slipped. Long personal block from noon.",
+  goal: "Catch up on anything that slipped. No social 6 AM to noon. Max 3 unblocks after noon.",
   blocks: [
-    { start: "06:00", end: "07:30", name: "GYM — LEGS Day", type: "workout", desc: "Squats, deadlifts, lunges, calves" },
-    { start: "07:30", end: "08:00", name: "Shower + Big Breakfast", type: "personal", desc: "Real meal — earned it" },
-    { start: "08:00", end: "08:15", name: "Word", type: "word", desc: "Today's reading — stewardship theme" },
-    { start: "08:15", end: "12:00", name: "Catch-up Block", type: "deep", desc: "Anything that slipped + prospect research for next week's outreach (build the builder list)" },
-    { start: "12:00", end: "22:00", name: "Long Personal Block", type: "personal", desc: "Errands, social, hobbies, life" },
-    { start: "22:00", end: "30:00", name: "Sleep", type: "sleep", desc: "Lights out" },
+    { start: "06:00", end: "07:30", name: "Gym - Legs Day", type: "workout", desc: "Squats, deadlifts, lunges, calves. No social.", rules: ["No social", "No screens during lifts"] },
+    { start: "07:30", end: "08:00", name: "Shower / Big Breakfast", type: "personal", desc: "Real meal. No screens while eating.", rules: ["No meal screens", "No social"] },
+    { start: "08:00", end: "08:15", name: "Word", type: "word", desc: "Stewardship reading.", rules: ["Bible app only", "No social"] },
+    { start: "08:15", end: "12:00", name: "Catch-up Block", type: "deep", desc: "Anything that slipped plus prospect research for next week.", rules: ["No social", "One Tab Rule", "Micro-tasks"] },
+    { start: "12:00", end: "22:00", name: "Long Personal Block", type: "personal", desc: "Errands, social, hobbies, life. Max 3 Refocus unblocks, 30 min each.", rules: ["Max 3 unblocks", "1 hour between", "No meal screens"] },
+    { start: "22:00", end: "30:00", name: "Sleep", type: "sleep", desc: "Lights out.", rules: ["Phone outside bedroom", "No screens"] },
   ],
 };
 
 const sundayDay = {
   type: "RECOVERY",
-  goal: "NO client work. Recovery is what makes Monday possible.",
+  goal: "No client work. No social 6 AM to noon. Light social noon to 6 PM, max 2 unblocks. No social after 6.",
   blocks: [
-    { start: "06:00", end: "07:00", name: "GYM — PULL Day", type: "workout", desc: "Back, biceps, rear delts (active recovery pace)" },
-    { start: "07:00", end: "07:30", name: "Shower + Slow Breakfast", type: "personal", desc: "No rush today" },
-    { start: "07:30", end: "08:00", name: "Word — Sabbath", type: "word", desc: "Extended reading + reflection" },
-    { start: "08:00", end: "12:00", name: "Whatever You Want", type: "off", desc: "No client work. Even if a client emails." },
-    { start: "12:00", end: "12:40", name: "Long Run", type: "run", desc: "Easy conversational pace. Builds aerobic base." },
-    { start: "12:40", end: "13:00", name: "Shower + Lunch", type: "break", desc: "Refuel" },
-    { start: "13:00", end: "18:00", name: "Personal / Family", type: "personal", desc: "The actual point of working hard all week" },
-    { start: "18:00", end: "18:15", name: "Light Prep", type: "plan", desc: "Review tomorrow's calendar, set out clothes." },
-    { start: "18:15", end: "22:00", name: "Personal", type: "personal", desc: "Wind down" },
-    { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out — 5 AM Monday awaits" },
+    { start: "06:00", end: "07:00", name: "Gym - Pull Day", type: "workout", desc: "Back, biceps, rear delts at recovery pace.", rules: ["No social", "No client work"] },
+    { start: "07:00", end: "07:30", name: "Shower / Slow Breakfast", type: "personal", desc: "No rush today. No screens while eating.", rules: ["No meal screens", "No social"] },
+    { start: "07:30", end: "08:00", name: "Word - Sabbath", type: "word", desc: "Extended reading and reflection.", rules: ["Bible app only", "No social"] },
+    { start: "08:00", end: "12:00", name: "Sabbath Morning", type: "off", desc: "No client work. No social. Let your nervous system breathe.", rules: ["No client work", "No social", "No inbox"] },
+    { start: "12:00", end: "12:40", name: "Long Run", type: "run", desc: "Easy conversational pace.", rules: ["Light social only after run if unblocked", "No meal screens"] },
+    { start: "12:40", end: "13:00", name: "Shower / Lunch", type: "break", desc: "Refuel. No screens while eating.", rules: ["No meal screens"] },
+    { start: "13:00", end: "18:00", name: "Personal / Family", type: "personal", desc: "Light social allowed, max 2 Refocus unblocks total.", rules: ["Max 2 unblocks", "Light social only", "No client work"] },
+    { start: "18:00", end: "18:15", name: "Light Prep", type: "plan", desc: "Review tomorrow's calendar and set out clothes.", rules: ["No social after 6", "Prep only"] },
+    { start: "18:15", end: "22:00", name: "Personal / No Social", type: "personal", desc: "Wind down. No social after 6 PM.", rules: ["No social", "Phone outside bedroom"] },
+    { start: "22:00", end: "29:00", name: "Sleep", type: "sleep", desc: "Lights out. 5 AM Monday awaits.", rules: ["Phone outside bedroom", "No screens"] },
   ],
 };
 
 const SCHEDULE = {
-  monday:    buildSellDay("PUSH"),
-  tuesday:   sellDayWithRun("PULL", "EASY"),
-  wednesday: buildSellDay("LEGS"),
-  thursday:  { ...sellDayWithRun("CORE", "INTERVALS"), goal: "50+ outreach touches. All booked calls hit. Most prospects who got Tuesday outreach respond by today." },
-  friday:    fridayDay,
-  saturday:  saturdayDay,
-  sunday:    sundayDay,
+  monday: founderWeekday("PUSH", "Ship one major client deliverable, 30 outreach touches, and protect every rule."),
+  tuesday: founderWeekday("PULL", "50+ outreach touches, booked calls hit, lunch run complete, no social leakage."),
+  wednesday: founderWeekday("LEGS", "Faithful execution in the middle of the week. Build, sell, reset clean."),
+  thursday: founderWeekday("CORE", "50+ outreach touches, all calls hit, creative systems sharpened, finish strong."),
+  friday: fridayDay,
+  saturday: saturdayDay,
+  sunday: sundayDay,
 };
 
 const CALISTHENICS = {
-  monday: {
-    title: "PUSH", subtitle: "Chest • Shoulders • Triceps", duration: "25–30 min", rounds: 4,
-    warmup: "Arm circles, shoulder rolls, light push-ups — 3 min",
-    exercises: [
-      { name: "Standard Push-ups", target: "12–20 reps" },
-      { name: "Pike Push-ups", target: "8–12 reps" },
-      { name: "Tricep Dips (chair/bench)", target: "10–15 reps" },
-      { name: "Diamond Push-ups", target: "8–12 reps (last 2 rounds)" },
-      { name: "Plank Hold", target: "45–60 sec" },
-    ],
-    notes: "Rest 60–90s between rounds. Form > speed.",
-  },
-  tuesday: {
-    title: "PULL", subtitle: "Back • Biceps • Rear Delts", duration: "25–30 min", rounds: 4,
-    warmup: "Arm swings, scapular pulls, light rows — 3 min",
-    exercises: [
-      { name: "Pull-ups (or chin-ups)", target: "5–10 reps" },
-      { name: "Inverted Rows (table/bar)", target: "10–15 reps" },
-      { name: "Doorway Curls (band/towel)", target: "10–15 reps" },
-      { name: "Superman Hold", target: "30 sec" },
-      { name: "Hollow Body Hold", target: "30 sec" },
-    ],
-    notes: "No pull-up bar? Double the inverted rows.",
-  },
-  wednesday: {
-    title: "LEGS", subtitle: "Quads • Hamstrings • Glutes", duration: "25–30 min", rounds: 4,
-    warmup: "Leg swings, bodyweight squats, lunges — 3 min",
-    exercises: [
-      { name: "Bodyweight Squats", target: "20–30 reps" },
-      { name: "Bulgarian Split Squats", target: "10 each leg" },
-      { name: "Reverse Lunges", target: "12 each leg" },
-      { name: "Calf Raises", target: "20 reps" },
-      { name: "Glute Bridges", target: "15 reps" },
-    ],
-    notes: "Quads burning = good. Add jump squats in round 4 if you have more in the tank.",
-  },
-  thursday: {
-    title: "CORE + CARDIO", subtitle: "Conditioning • Endurance", duration: "25–30 min", rounds: 4,
-    warmup: "Jumping jacks, arm circles — 2 min",
-    exercises: [
-      { name: "Mountain Climbers", target: "30 sec" },
-      { name: "Burpees", target: "10–15 reps" },
-      { name: "Plank", target: "45–60 sec" },
-      { name: "Russian Twists", target: "20 (10 each side)" },
-      { name: "High Knees", target: "60 sec" },
-    ],
-    notes: "Conditioning day — keep rest tight (30–45s).",
-  },
+  monday: { title: "PUSH", subtitle: "Chest / Shoulders / Triceps", duration: "25-30 min", rounds: 4, warmup: "Arm circles, shoulder rolls, light push-ups - 3 min", exercises: [
+    { name: "Standard Push-ups", target: "12-20 reps" }, { name: "Pike Push-ups", target: "8-12 reps" }, { name: "Tricep Dips", target: "10-15 reps" }, { name: "Diamond Push-ups", target: "8-12 reps" }, { name: "Plank Hold", target: "45-60 sec" }
+  ], notes: "Rest 60-90s. Form beats speed." },
+  tuesday: { title: "PULL", subtitle: "Back / Biceps / Rear Delts", duration: "25-30 min", rounds: 4, warmup: "Arm swings, scapular pulls, light rows - 3 min", exercises: [
+    { name: "Pull-ups or Chin-ups", target: "5-10 reps" }, { name: "Inverted Rows", target: "10-15 reps" }, { name: "Doorway Curls", target: "10-15 reps" }, { name: "Superman Hold", target: "30 sec" }, { name: "Hollow Body Hold", target: "30 sec" }
+  ], notes: "No pull-up bar? Double the rows." },
+  wednesday: { title: "LEGS", subtitle: "Quads / Hamstrings / Glutes", duration: "25-30 min", rounds: 4, warmup: "Leg swings, bodyweight squats, lunges - 3 min", exercises: [
+    { name: "Bodyweight Squats", target: "20-30 reps" }, { name: "Bulgarian Split Squats", target: "10 each leg" }, { name: "Reverse Lunges", target: "12 each leg" }, { name: "Calf Raises", target: "20 reps" }, { name: "Glute Bridges", target: "15 reps" }
+  ], notes: "Add jump squats in round 4 if you have more." },
+  thursday: { title: "CORE", subtitle: "Conditioning / Endurance", duration: "25-30 min", rounds: 4, warmup: "Jumping jacks, arm circles - 2 min", exercises: [
+    { name: "Mountain Climbers", target: "30 sec" }, { name: "Burpees", target: "10-15 reps" }, { name: "Plank", target: "45-60 sec" }, { name: "Russian Twists", target: "20 total" }, { name: "High Knees", target: "60 sec" }
+  ], notes: "Keep rest tight: 30-45s." },
 };
 
 const GYM_WORKOUTS = {
-  friday: {
-    title: "PUSH", subtitle: "Chest • Shoulders • Triceps", duration: "75–90 min",
-    exercises: [
-      { id: "bench",           name: "Bench Press",       sets: 4, repsLow: 6,  repsHigh: 8,  increment: 5   },
-      { id: "ohp",             name: "Overhead Press",    sets: 3, repsLow: 6,  repsHigh: 8,  increment: 5   },
-      { id: "incline-db",      name: "Incline DB Press",  sets: 3, repsLow: 8,  repsHigh: 10, increment: 2.5 },
-      { id: "lateral-raise",   name: "Lateral Raises",    sets: 3, repsLow: 12, repsHigh: 15, increment: 2.5 },
-      { id: "tricep-dip",      name: "Tricep Dips",       sets: 3, repsLow: 8,  repsHigh: 12, increment: 2.5 },
-      { id: "tricep-pushdown", name: "Cable Pushdown",    sets: 3, repsLow: 12, repsHigh: 15, increment: 2.5 },
-    ],
-  },
-  saturday: {
-    title: "LEGS", subtitle: "Quads • Hamstrings • Glutes • Calves", duration: "75–90 min",
-    exercises: [
-      { id: "squat",       name: "Back Squat",            sets: 4, repsLow: 6,  repsHigh: 8,  increment: 5   },
-      { id: "rdl",         name: "Romanian Deadlift",     sets: 4, repsLow: 8,  repsHigh: 10, increment: 5   },
-      { id: "split-squat", name: "Bulgarian Split Squat", sets: 3, repsLow: 10, repsHigh: 10, increment: 2.5 },
-      { id: "leg-press",   name: "Leg Press",             sets: 3, repsLow: 10, repsHigh: 12, increment: 10  },
-      { id: "leg-curl",    name: "Seated Leg Curl",       sets: 3, repsLow: 12, repsHigh: 15, increment: 5   },
-      { id: "calf-raise",  name: "Standing Calf Raise",   sets: 4, repsLow: 12, repsHigh: 15, increment: 5   },
-      { id: "plank",       name: "Plank (sec)",           sets: 3, repsLow: 45, repsHigh: 60, increment: 0   },
-    ],
-  },
-  sunday: {
-    title: "PULL", subtitle: "Back • Biceps • Rear Delts", duration: "50–60 min",
-    exercises: [
-      { id: "pullup",    name: "Pull-Ups",         sets: 4, repsLow: 6,  repsHigh: 10, increment: 2.5 },
-      { id: "bb-row",    name: "Barbell Row",      sets: 3, repsLow: 8,  repsHigh: 10, increment: 5   },
-      { id: "cable-row", name: "Seated Cable Row", sets: 3, repsLow: 10, repsHigh: 12, increment: 5   },
-      { id: "face-pull", name: "Face Pulls",       sets: 3, repsLow: 12, repsHigh: 15, increment: 2.5 },
-      { id: "bb-curl",   name: "Barbell Curls",    sets: 3, repsLow: 8,  repsHigh: 10, increment: 2.5 },
-      { id: "hammer",    name: "Hammer Curls",     sets: 3, repsLow: 10, repsHigh: 12, increment: 2.5 },
-    ],
-  },
+  friday: { title: "PUSH", subtitle: "Chest / Shoulders / Triceps", duration: "75-90 min", exercises: [
+    { id: "bench", name: "Bench Press", sets: 4, repsLow: 6, repsHigh: 8, increment: 5 },
+    { id: "ohp", name: "Overhead Press", sets: 3, repsLow: 6, repsHigh: 8, increment: 5 },
+    { id: "incline-db", name: "Incline DB Press", sets: 3, repsLow: 8, repsHigh: 10, increment: 2.5 },
+    { id: "lateral-raise", name: "Lateral Raises", sets: 3, repsLow: 12, repsHigh: 15, increment: 2.5 },
+    { id: "tricep-dip", name: "Tricep Dips", sets: 3, repsLow: 8, repsHigh: 12, increment: 2.5 },
+    { id: "tricep-pushdown", name: "Cable Pushdown", sets: 3, repsLow: 12, repsHigh: 15, increment: 2.5 },
+  ] },
+  saturday: { title: "LEGS", subtitle: "Quads / Hamstrings / Glutes / Calves", duration: "75-90 min", exercises: [
+    { id: "squat", name: "Back Squat", sets: 4, repsLow: 6, repsHigh: 8, increment: 5 },
+    { id: "rdl", name: "Romanian Deadlift", sets: 4, repsLow: 8, repsHigh: 10, increment: 5 },
+    { id: "split-squat", name: "Bulgarian Split Squat", sets: 3, repsLow: 10, repsHigh: 10, increment: 2.5 },
+    { id: "leg-press", name: "Leg Press", sets: 3, repsLow: 10, repsHigh: 12, increment: 10 },
+    { id: "leg-curl", name: "Seated Leg Curl", sets: 3, repsLow: 12, repsHigh: 15, increment: 5 },
+    { id: "calf-raise", name: "Standing Calf Raise", sets: 4, repsLow: 12, repsHigh: 15, increment: 5 },
+  ] },
+  sunday: { title: "PULL", subtitle: "Back / Biceps / Rear Delts", duration: "50-60 min", exercises: [
+    { id: "pullup", name: "Pull-Ups", sets: 4, repsLow: 6, repsHigh: 10, increment: 2.5 },
+    { id: "bb-row", name: "Barbell Row", sets: 3, repsLow: 8, repsHigh: 10, increment: 5 },
+    { id: "cable-row", name: "Seated Cable Row", sets: 3, repsLow: 10, repsHigh: 12, increment: 5 },
+    { id: "face-pull", name: "Face Pulls", sets: 3, repsLow: 12, repsHigh: 15, increment: 2.5 },
+    { id: "bb-curl", name: "Barbell Curls", sets: 3, repsLow: 8, repsHigh: 10, increment: 2.5 },
+    { id: "hammer", name: "Hammer Curls", sets: 3, repsLow: 10, repsHigh: 12, increment: 2.5 },
+  ] },
 };
 
 const RUNS = {
-  tuesday: {
-    type: "EASY", duration: 30, pace: "Conversational",
-    description: "Steady, easy pace. You should be able to hold a conversation. Builds aerobic base.",
-    structure: "30 min continuous at easy pace. If you can't talk in full sentences, slow down.",
-  },
-  thursday: {
-    type: "INTERVALS", duration: 25, pace: "Mixed (Hard / Easy)",
-    description: "Builds speed and VO2 max. Today's sales calls demand sharp energy — intervals give that.",
-    structure: "5 min warmup jog → 6 rounds of [1 min hard / 1 min easy jog] → 3 min cooldown walk",
-  },
-  sunday: {
-    type: "LONG", duration: 40, pace: "Easy, all-day pace",
-    description: "Longer aerobic effort. Sunday body is rested — capitalize. Stay easy.",
-    structure: "40 min continuous at conversational pace. Bring water if hot.",
-  },
+  tuesday: { type: "EASY", duration: 30, pace: "Conversational", description: "Steady and easy. You should be able to hold a conversation.", structure: "30 min continuous easy pace. If you cannot speak in full sentences, slow down." },
+  thursday: { type: "INTERVALS", duration: 25, pace: "Hard / Easy", description: "Speed and VO2 work. Sharp body, sharp sales calls.", structure: "5 min warmup jog -> 6 rounds of 1 min hard / 1 min easy -> 3 min cooldown." },
+  sunday: { type: "LONG", duration: 40, pace: "Easy", description: "Longer aerobic effort. Keep it conversational.", structure: "40 min continuous easy pace. Bring water if hot." },
 };
+
 const READING_PLAN = {
-  monday: {
-    theme: "DILIGENCE", subtitle: "Diligence & Hard Work", color: "#ff6b35",
-    readings: [
-      { ref: "Proverbs 6:6–11", text: "Go to the ant, O sluggard; consider her ways, and be wise. Without having any chief, officer, or ruler, she prepares her bread in summer and gathers her food in harvest. How long will you lie there, O sluggard? A little sleep, a little slumber, a little folding of the hands to rest, and poverty will come upon you like a robber.", apply: "5 AM isn't punishment. It's the ant's wisdom — preparing in season for what's coming." },
-      { ref: "Colossians 3:23–24", text: "Whatever you do, work heartily, as for the Lord and not for men, knowing that from the Lord you will receive the inheritance as your reward. You are serving the Lord Christ.", apply: "Every cold DM, every sales call, every ad build — done as worship, not as transaction." },
-      { ref: "Proverbs 13:4", text: "The soul of the sluggard craves and gets nothing, while the soul of the diligent is richly supplied.", apply: "The diligent get supplied. Not because of luck. Because of consistent daily action." },
-      { ref: "Ecclesiastes 9:10", text: "Whatever your hand finds to do, do it with your might, for there is no work or thought or knowledge or wisdom in Sheol, to which you are going.", apply: "Today's hand finds: outreach, client work, building. With your might. Not half." },
-    ],
-  },
-  tuesday: {
-    theme: "WORDS", subtitle: "Wisdom for Speaking & Selling", color: "#a855f7",
-    readings: [
-      { ref: "Proverbs 16:24", text: "Gracious words are like a honeycomb, sweetness to the soul and health to the body.", apply: "On today's sales calls — gracious words, not pushy ones. Honey not vinegar." },
-      { ref: "Proverbs 22:29", text: "Do you see a man skillful in his work? He will stand before kings; he will not stand before obscure men.", apply: "Skill in your work is what opens the doors. Build the skill." },
-      { ref: "Proverbs 16:3", text: "Commit your work to the Lord, and your plans will be established.", apply: "Before today's calls — commit them. Then make them with confidence." },
-      { ref: "James 1:5", text: "If any of you lacks wisdom, let him ask God, who gives generously to all without reproach, and it will be given him.", apply: "Stuck on a client decision? Ask Him before you ask forums and YouTube." },
-    ],
-  },
-  wednesday: {
-    theme: "FAITHFUL IN LITTLE", subtitle: "Faithfulness in Small Things", color: "#06b6d4",
-    readings: [
-      { ref: "Luke 16:10", text: "One who is faithful in a very little is also faithful in much, and one who is dishonest in a very little is also dishonest in much.", apply: "3 clients faithfully = the seed for 30 clients faithfully. Don't despise the 3." },
-      { ref: "Matthew 25:21", text: "His master said to him, 'Well done, good and faithful servant. You have been faithful over a little; I will set you over much. Enter into the joy of your master.'", apply: "The two-talent servant didn't get less reward than the five. Faithfulness, not size, is the metric." },
-      { ref: "Zechariah 4:10", text: "For whoever has despised the day of small things shall rejoice, and shall see the plumb line in the hand of Zerubbabel.", apply: "Don't despise day 1. The plumb line in your hand right now is the same one that builds the tower." },
-      { ref: "Proverbs 28:20", text: "A faithful man will abound with blessings, but whoever hastens to be rich will not go unpunished.", apply: "Faithful daily action > frantic shortcut attempts." },
-    ],
-  },
-  thursday: {
-    theme: "DISCIPLINE", subtitle: "Discipline & Training", color: "#ef4444",
-    readings: [
-      { ref: "1 Corinthians 9:24–27", text: "Do you not know that in a race all the runners run, but only one receives the prize? So run that you may obtain it. Every athlete exercises self-control in all things. I do not run aimlessly; I discipline my body and keep it under control.", apply: "Today's intervals, today's 5 AM wake — that's training. Discipline now, run the long race." },
-      { ref: "2 Timothy 2:3–7", text: "Share in suffering as a good soldier of Christ Jesus. No soldier gets entangled in civilian pursuits. An athlete is not crowned unless he competes according to the rules. It is the hard-working farmer who ought to have the first share of the crops.", apply: "Soldier, athlete, farmer — same idea: those who keep going get the reward." },
-      { ref: "Hebrews 12:11", text: "For the moment all discipline seems painful rather than pleasant, but later it yields the peaceful fruit of righteousness to those who have been trained by it.", apply: "5 AM hurts in the moment. The fruit comes later. Trust the lag." },
-      { ref: "Proverbs 25:28", text: "A man without self-control is like a city broken into and left without walls.", apply: "Self-control is the wall. Without it, every distraction gets in." },
-    ],
-  },
-  friday: {
-    theme: "TRUST", subtitle: "Trust in God's Plan", color: "#fbbf24",
-    readings: [
-      { ref: "Proverbs 3:5–6", text: "Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.", apply: "Week's wrapping. Trust beats anxiety. He makes the path straight." },
-      { ref: "Jeremiah 29:11", text: "For I know the plans I have for you, declares the Lord, plans for welfare and not for evil, to give you a future and a hope.", apply: "Look at where you started. He's been planning this. Keep going." },
-      { ref: "Psalm 37:4–5", text: "Delight yourself in the Lord, and he will give you the desires of your heart. Commit your way to the Lord; trust in him, and he will act.", apply: "Delight first. The desires come from delight, not from the grind." },
-      { ref: "Isaiah 40:31", text: "But they who wait for the Lord shall renew their strength; they shall mount up with wings like eagles; they shall run and not be weary; they shall walk and not faint.", apply: "Weekend rest = renewing strength. Real rest, not 'productive' rest." },
-    ],
-  },
-  saturday: {
-    theme: "STEWARDSHIP", subtitle: "Steward What You've Been Given", color: "#22c55e",
-    readings: [
-      { ref: "Proverbs 21:5", text: "The plans of the diligent lead surely to abundance, but everyone who is hasty comes only to poverty.", apply: "Saturday catch-up = stewarding what slipped. Diligent today closes the gap." },
-      { ref: "1 Peter 4:10", text: "As each has received a gift, use it to serve one another, as good stewards of God's varied grace.", apply: "Your skill is a gift to be stewarded for clients, not hoarded for ego." },
-      { ref: "Luke 12:48", text: "Everyone to whom much was given, of him much will be required, and from him to whom they entrusted much, they will demand the more.", apply: "Three clients now, more later. The standard goes up with the responsibility." },
-      { ref: "Matthew 6:19–21", text: "Do not lay up for yourselves treasures on earth, where moth and rust destroy and where thieves break in and steal, but lay up for yourselves treasures in heaven. For where your treasure is, there will your heart be also.", apply: "The $300K isn't the goal. It's a tool. Treasure goes higher than the bank balance." },
-    ],
-  },
-  sunday: {
-    theme: "SABBATH", subtitle: "Worship, Rest, Purpose", color: "#d4a574",
-    readings: [
-      { ref: "Matthew 6:33", text: "But seek first the kingdom of God and his righteousness, and all these things will be added to you.", apply: "First. Not eventually. First. Then everything else gets added." },
-      { ref: "Psalm 1:1–3", text: "Blessed is the man whose delight is in the law of the Lord, and on his law he meditates day and night. He is like a tree planted by streams of water that yields its fruit in its season, and its leaf does not wither. In all that he does, he prospers.", apply: "Sunday's meditation feeds Monday's tree. The fruit comes in its season, not on demand." },
-      { ref: "Mark 2:27", text: "And he said to them, 'The Sabbath was made for man, not man for the Sabbath.'", apply: "Today's rest isn't laziness. It's design. The Sabbath is for you, not against you." },
-      { ref: "Psalm 23:1–3", text: "The Lord is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.", apply: "He restores. Today is for restoration so Monday can be ready." },
-    ],
-  },
+  monday: { theme: "DILIGENCE", subtitle: "Diligence and hard work", color: C.accent, readings: [
+    { ref: "Proverbs 6:6-11", text: "Go to the ant, O sluggard; consider her ways, and be wise. Without having any chief, officer, or ruler, she prepares her bread in summer and gathers her food in harvest.", apply: "5 AM is not punishment. It is preparation in season." },
+    { ref: "Colossians 3:23-24", text: "Whatever you do, work heartily, as for the Lord and not for men, knowing that from the Lord you will receive the inheritance as your reward.", apply: "Every cold DM, call, and build block is done as worship, not transaction." },
+    { ref: "Proverbs 13:4", text: "The soul of the sluggard craves and gets nothing, while the soul of the diligent is richly supplied.", apply: "The diligent get supplied because daily action compounds." },
+    { ref: "Ecclesiastes 9:10", text: "Whatever your hand finds to do, do it with your might.", apply: "Outreach, client work, building. With your might." },
+  ] },
+  tuesday: { theme: "WORDS", subtitle: "Wisdom for speaking and selling", color: C.purple, readings: [
+    { ref: "Proverbs 16:24", text: "Gracious words are like a honeycomb, sweetness to the soul and health to the body.", apply: "Sales calls need gracious words, not pressure." },
+    { ref: "Proverbs 22:29", text: "Do you see a man skillful in his work? He will stand before kings; he will not stand before obscure men.", apply: "Skill opens doors. Build the skill." },
+    { ref: "Proverbs 16:3", text: "Commit your work to the Lord, and your plans will be established.", apply: "Commit the calls, then make them with confidence." },
+    { ref: "James 1:5", text: "If any of you lacks wisdom, let him ask God, who gives generously to all without reproach.", apply: "Ask before you spiral into research." },
+  ] },
+  wednesday: { theme: "FAITHFUL", subtitle: "Faithful in small things", color: C.cyan, readings: [
+    { ref: "Luke 16:10", text: "One who is faithful in a very little is also faithful in much.", apply: "Three clients faithfully is the seed for thirty clients faithfully." },
+    { ref: "Matthew 25:21", text: "Well done, good and faithful servant. You have been faithful over a little; I will set you over much.", apply: "Faithfulness, not size, is the metric." },
+    { ref: "Zechariah 4:10", text: "For whoever has despised the day of small things shall rejoice.", apply: "Do not despise day one. Build." },
+    { ref: "Proverbs 28:20", text: "A faithful man will abound with blessings, but whoever hastens to be rich will not go unpunished.", apply: "Faithful daily action beats frantic shortcuts." },
+  ] },
+  thursday: { theme: "DISCIPLINE", subtitle: "Discipline and training", color: C.red, readings: [
+    { ref: "1 Corinthians 9:24-27", text: "Every athlete exercises self-control in all things. I discipline my body and keep it under control.", apply: "The system is training. Run so you may obtain it." },
+    { ref: "2 Timothy 2:3-7", text: "No soldier gets entangled in civilian pursuits. An athlete is not crowned unless he competes according to the rules.", apply: "Do not get entangled. Compete according to the rules." },
+    { ref: "Hebrews 12:11", text: "For the moment all discipline seems painful rather than pleasant, but later it yields the peaceful fruit of righteousness.", apply: "The fruit comes later. Trust the lag." },
+    { ref: "Proverbs 25:28", text: "A man without self-control is like a city broken into and left without walls.", apply: "Self-control is the wall. Keep it up." },
+  ] },
+  friday: { theme: "TRUST", subtitle: "Trust in God's plan", color: C.amber, readings: [
+    { ref: "Proverbs 3:5-6", text: "Trust in the Lord with all your heart, and do not lean on your own understanding.", apply: "Week is wrapping. Trust beats anxiety." },
+    { ref: "Jeremiah 29:11", text: "For I know the plans I have for you, declares the Lord, plans for welfare and not for evil.", apply: "He has been planning this. Keep going." },
+    { ref: "Psalm 37:4-5", text: "Delight yourself in the Lord, and he will give you the desires of your heart.", apply: "Delight first. The grind is not your god." },
+    { ref: "Isaiah 40:31", text: "They who wait for the Lord shall renew their strength.", apply: "Real rest renews strength." },
+  ] },
+  saturday: { theme: "STEWARDSHIP", subtitle: "Steward what you have", color: C.green, readings: [
+    { ref: "Proverbs 21:5", text: "The plans of the diligent lead surely to abundance, but everyone who is hasty comes only to poverty.", apply: "Catch-up is stewardship, not punishment." },
+    { ref: "1 Peter 4:10", text: "As each has received a gift, use it to serve one another, as good stewards of God's varied grace.", apply: "Your skill is a gift to steward for clients." },
+    { ref: "Luke 12:48", text: "Everyone to whom much was given, of him much will be required.", apply: "The standard rises with responsibility." },
+    { ref: "Matthew 6:19-21", text: "For where your treasure is, there your heart will be also.", apply: "Money is a tool. Treasure goes higher." },
+  ] },
+  sunday: { theme: "SABBATH", subtitle: "Worship, rest, purpose", color: C.gold, readings: [
+    { ref: "Matthew 6:33", text: "But seek first the kingdom of God and his righteousness, and all these things will be added to you.", apply: "First. Not eventually. First." },
+    { ref: "Psalm 1:1-3", text: "He is like a tree planted by streams of water that yields its fruit in its season.", apply: "Sunday feeds Monday's tree." },
+    { ref: "Mark 2:27", text: "The Sabbath was made for man, not man for the Sabbath.", apply: "Rest is design, not laziness." },
+    { ref: "Psalm 23:1-3", text: "He restores my soul. He leads me in paths of righteousness for his name's sake.", apply: "He restores. Let Sunday do its work." },
+  ] },
 };
+
+const DAILY_RULES = [
+  { id: "movement", label: "Movement loop every 25 min", icon: "flame" },
+  { id: "one-tab", label: "One Tab Rule", icon: "shield" },
+  { id: "micro", label: "Micro-tasks before execution", icon: "list" },
+  { id: "anchor", label: "Focus anchor before each task", icon: "target" },
+  { id: "object", label: "Anchor object during deep work", icon: "target" },
+  { id: "zones", label: "Two-zone workspace", icon: "shield" },
+  { id: "meals", label: "No screens during meals", icon: "coffee" },
+  { id: "bedroom", label: "Phone outside bedroom", icon: "phone" },
+  { id: "pacing", label: "No pacing except reset blocks", icon: "ban" },
+  { id: "word", label: "Read the Word", icon: "book" },
+  { id: "exercise", label: "Training complete", icon: "dumbbell" },
+];
+
+const IDENTITY_LINES = [
+  "I am not hungry because I am broke; I am hungry because I am called.",
+  "I am not hungry because I want an M4; I am hungry because I want to become the man who earns it effortlessly.",
+  "I am not hungry because I want money; I am hungry because I want freedom.",
+  "I am not hungry because I am insecure; I am hungry because I am driven.",
+  "That kind of hunger does not fade. It matures.",
+];
+
+const LONG_TERM_GOALS = [
+  "$10K MRR",
+  "$100K/month before 18",
+  "Real estate and apartment ownership",
+  "Build other companies",
+  "Charities and nonprofits for immigrants to America",
+];
+
+const todayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const safeGet = (key) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } };
+const safeSet = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} };
+const safeDelete = (key) => { try { localStorage.removeItem(key); } catch {} };
+const minutesFromTimeStr = (t) => { const [h,m] = t.split(":").map(Number); return h*60+m; };
+const nowMinutes = (d = new Date()) => d.getHours()*60 + d.getMinutes();
+const getCurrentDay = () => DAYS[new Date().getDay()];
+
+function formatTime(t) {
+  const [h,m] = t.split(":").map(Number);
+  const realH = h % 24;
+  const ampm = realH >= 12 ? "PM" : "AM";
+  const displayH = realH === 0 ? 12 : realH > 12 ? realH - 12 : realH;
+  return `${displayH}:${String(m).padStart(2,"0")} ${ampm}`;
+}
 
 function getReadingWeek() {
   const epoch = new Date(2026, 0, 5);
   const now = new Date();
-  const days = Math.floor((now - epoch) / (24*60*60*1000));
-  return ((days >= 0 ? days : 0) / 7 | 0) % 4;
+  const days = Math.max(0, Math.floor((now - epoch) / (24*60*60*1000)));
+  return Math.floor(days / 7) % 4;
 }
-function getCurrentDay() { return DAYS[new Date().getDay()]; }
-function getTodaysReading() {
-  const day = getCurrentDay();
+
+function getTodaysReading(day = getCurrentDay()) {
   const plan = READING_PLAN[day];
   const week = getReadingWeek();
   return { ...plan, today: plan.readings[week], weekInCycle: week };
 }
 
-const HARD_RULES = [
-  { id: "sleep",     label: "Lights out by 10 PM",     icon: "moon"   },
-  { id: "exercise",  label: "30+ min movement",        icon: "flame"  },
-  { id: "word",      label: "Read the Word",           icon: "book"   },
-  { id: "meal",      label: "Real meal, no screens",   icon: "coffee" },
-  { id: "phone",     label: "Phone outside bedroom",   icon: "moon"   },
-  { id: "no-sunday", label: "No client work Sunday",   icon: "sun", sundayOnly: true },
-];
-
-const todayKey = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-};
-const minutesFromTimeStr = (t) => { const [h,m] = t.split(":").map(Number); return h*60+m; };
-const formatTime = (t) => {
-  const [h,m] = t.split(":").map(Number);
-  const realH = h % 24;
-  const ampm = realH >= 12 ? "PM" : "AM";
-  const displayH = realH === 0 ? 12 : realH > 12 ? realH-12 : realH;
-  return `${displayH}:${String(m).padStart(2,"0")} ${ampm}`;
-};
 function getCurrentBlock(day) {
-  const now = new Date();
-  const nowMins = now.getHours()*60 + now.getMinutes();
+  const mins = nowMinutes();
   const dayData = SCHEDULE[day];
   if (!dayData) return null;
   for (let i = 0; i < dayData.blocks.length; i++) {
@@ -429,44 +368,127 @@ function getCurrentBlock(day) {
     const start = minutesFromTimeStr(b.start);
     const endRaw = minutesFromTimeStr(b.end);
     if (endRaw > 24*60) {
-      if (nowMins >= start || nowMins < (endRaw - 24*60)) {
+      if (mins >= start || mins < (endRaw - 24*60)) {
         const total = endRaw - start;
-        const elapsed = nowMins >= start ? nowMins - start : (24*60 - start) + nowMins;
-        return { ...b, index: i, progress: elapsed/total };
+        const elapsed = mins >= start ? mins - start : (24*60 - start) + mins;
+        return { ...b, index: i, progress: elapsed / total };
       }
-    } else if (nowMins >= start && nowMins < endRaw) {
-      return { ...b, index: i, progress: (nowMins - start) / (endRaw - start) };
+    } else if (mins >= start && mins < endRaw) {
+      return { ...b, index: i, progress: (mins - start) / (endRaw - start) };
     }
   }
   return null;
 }
+
 function getNextBlock(day, currentIndex) {
-  const dayData = SCHEDULE[day]; if (!dayData) return null;
-  if (currentIndex !== null && currentIndex !== undefined) {
-    if (currentIndex + 1 < dayData.blocks.length) return dayData.blocks[currentIndex+1];
-    return null;
-  }
-  const now = new Date();
-  const nowMins = now.getHours()*60 + now.getMinutes();
-  for (const b of dayData.blocks) if (minutesFromTimeStr(b.start) > nowMins) return b;
-  return null;
+  const dayData = SCHEDULE[day];
+  if (!dayData) return null;
+  if (currentIndex !== null && currentIndex !== undefined) return dayData.blocks[currentIndex + 1] || null;
+  const mins = nowMinutes();
+  return dayData.blocks.find(b => minutesFromTimeStr(b.start) > mins) || null;
 }
+
 function minutesUntilEnd(block) {
   if (!block) return 0;
-  const now = new Date();
-  const nowMins = now.getHours()*60 + now.getMinutes();
+  const mins = nowMinutes();
+  const start = minutesFromTimeStr(block.start);
   const endRaw = minutesFromTimeStr(block.end);
   if (endRaw > 24*60) {
     const realEnd = endRaw - 24*60;
-    if (nowMins >= minutesFromTimeStr(block.start)) return (24*60 - nowMins) + realEnd;
-    return realEnd - nowMins;
+    if (mins >= start) return (24*60 - mins) + realEnd;
+    return realEnd - mins;
   }
-  return endRaw - nowMins;
+  return Math.max(0, endRaw - mins);
 }
 
-const safeGet = (key) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } };
-const safeSet = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} };
-const safeDelete = (key) => { try { localStorage.removeItem(key); } catch {} };
+function getRefocusLogs() {
+  return safeGet(`refocus:${todayKey()}`) || [];
+}
+
+function refocusSummary(day, date = new Date(), logs = getRefocusLogs()) {
+  const mins = nowMinutes(date);
+  const last = logs.length ? logs[logs.length - 1] : null;
+  const minutesSinceLast = last ? Math.floor((date - new Date(last.ts)) / 60000) : 9999;
+  const cooldownLeft = Math.max(0, 60 - minutesSinceLast);
+  const used = logs.length;
+
+  const withCooldown = (base) => {
+    if (!base.allowed) return base;
+    if (cooldownLeft > 0 && base.cooldown) return { ...base, allowed: false, title: "Cooldown Active", message: `${cooldownLeft}m until next Refocus unblock.`, tone: "warn" };
+    return base;
+  };
+
+  if (["monday","tuesday","wednesday","thursday"].includes(day)) {
+    const usedLunch = logs.some(l => l.window === "lunch");
+    const usedEvening = logs.some(l => l.window === "evening");
+    if (mins >= 720 && mins < 780) {
+      if (usedLunch) return { allowed: false, title: "Lunch Refocus Used", message: "No more social until 8:00 PM.", tone: "locked", max: 2, used };
+      return { allowed: true, title: "10-Min Lunch Refocus", message: "Optional only. Use it once, then close it.", tone: "open", minutes: 10, window: "lunch", max: 2, used };
+    }
+    if (mins >= 1200 && mins < 1230) {
+      if (usedEvening) return { allowed: false, title: "Evening Refocus Used", message: "No more social tonight.", tone: "locked", max: 2, used };
+      return { allowed: true, title: "30-Min Controlled Social", message: "One unblock. Timer on. Stop at 8:30.", tone: "open", minutes: 30, window: "evening", max: 2, used };
+    }
+    return { allowed: false, title: "Social Locked", message: "Mon-Thu social is only lunch optional or 8:00-8:30 PM.", tone: "locked", max: 2, used };
+  }
+
+  if (day === "friday") {
+    if (mins >= 300 && mins < 1050) return { allowed: false, title: "Social Locked", message: "Friday rule: no social from 5:00 AM to 5:30 PM.", tone: "locked", max: 3, used };
+    if (mins >= 1050 && mins < 1320) {
+      if (used >= 3) return { allowed: false, title: "Limit Hit", message: "All 3 Friday Refocus unblocks are used.", tone: "locked", max: 3, used };
+      return withCooldown({ allowed: true, cooldown: true, title: "Friday Refocus", message: "30 min max. Keep 1 hour between unblocks.", tone: "open", minutes: 30, window: "friday", max: 3, used });
+    }
+    return { allowed: false, title: "Phone Away", message: "Protect sleep. Phone outside bedroom.", tone: "locked", max: 3, used };
+  }
+
+  if (day === "saturday") {
+    if (mins >= 360 && mins < 720) return { allowed: false, title: "Social Locked", message: "Saturday rule: no social from 6:00 AM to noon.", tone: "locked", max: 3, used };
+    if (mins >= 720 && mins < 1320) {
+      if (used >= 3) return { allowed: false, title: "Limit Hit", message: "All 3 Saturday Refocus unblocks are used.", tone: "locked", max: 3, used };
+      return withCooldown({ allowed: true, cooldown: true, title: "Saturday Refocus", message: "30 min max. Keep 1 hour between unblocks.", tone: "open", minutes: 30, window: "saturday", max: 3, used });
+    }
+    return { allowed: false, title: "Phone Away", message: "Protect sleep. Phone outside bedroom.", tone: "locked", max: 3, used };
+  }
+
+  if (day === "sunday") {
+    if (mins >= 360 && mins < 720) return { allowed: false, title: "Social Locked", message: "Sunday rule: no social from 6:00 AM to noon.", tone: "locked", max: 2, used };
+    if (mins >= 720 && mins < 1080) {
+      if (used >= 2) return { allowed: false, title: "Limit Hit", message: "Both Sunday light-social unblocks are used.", tone: "locked", max: 2, used };
+      return withCooldown({ allowed: true, cooldown: true, title: "Sunday Light Social", message: "Light social only. Max 2 unblocks before 6 PM.", tone: "open", minutes: 30, window: "sunday", max: 2, used });
+    }
+    if (mins >= 1080) return { allowed: false, title: "No Social After 6", message: "Sunday evening is for wind-down and Monday prep.", tone: "locked", max: 2, used };
+    return { allowed: false, title: "Phone Away", message: "Protect sleep and Sabbath rhythm.", tone: "locked", max: 2, used };
+  }
+
+  return { allowed: false, title: "Social Locked", message: "No Refocus policy found.", tone: "locked", max: 0, used };
+}
+
+function getGrade(checks, day, logs) {
+  const done = DAILY_RULES.filter(r => checks[r.id]).length;
+  const base = DAILY_RULES.length;
+  const policy = refocusSummary(day, new Date(), logs);
+  const max = policy.max || 0;
+  const withinLimit = logs.length <= max;
+  const score = Math.round(((done + (withinLimit ? 1 : 0)) / (base + 1)) * 100);
+  const letter = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
+  return { score, letter, done, total: base, withinLimit };
+}
+
+function SectionTitle({ eyebrow, title, right }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+      <div>
+        {eyebrow && <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>{eyebrow}</div>}
+        <h2 className="display" style={{ fontSize: 28, color: C.text, margin: 0, lineHeight: 1 }}>{title}</h2>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function Pill({ children, color = C.textFaint, bg }) {
+  return <span className="display" style={{ display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "4px 10px", fontSize: 10, letterSpacing: "0.14em", color, background: bg || color + "20", border: `1px solid ${color}33`, whiteSpace: "nowrap" }}>{children}</span>;
+}
 
 function App() {
   const [tab, setTab] = useState("now");
@@ -478,11 +500,11 @@ function App() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, paddingBottom: 92 }}>
       <div style={{ maxWidth: 480, margin: "0 auto" }}>
-        {tab === "now"    && <NowTab />}
-        {tab === "week"   && <WeekTab />}
-        {tab === "train"  && <TrainTab />}
-        {tab === "word"   && <WordTab />}
-        {tab === "habits" && <HabitsTab />}
+        {tab === "now" && <NowTab />}
+        {tab === "week" && <WeekTab />}
+        {tab === "train" && <TrainTab />}
+        {tab === "word" && <WordTab />}
+        {tab === "rules" && <RulesTab />}
       </div>
       <BottomNav tab={tab} setTab={setTab} />
     </div>
@@ -491,28 +513,19 @@ function App() {
 
 function BottomNav({ tab, setTab }) {
   const items = [
-    { id: "now",    label: "NOW",   icon: "clock"        },
-    { id: "week",   label: "WEEK",  icon: "calendar"     },
-    { id: "train",  label: "TRAIN", icon: "dumbbell"     },
-    { id: "word",   label: "WORD",  icon: "book"         },
-    { id: "habits", label: "RULES", icon: "checksquare"  },
+    { id: "now", label: "NOW", icon: "clock" },
+    { id: "week", label: "WEEK", icon: "calendar" },
+    { id: "train", label: "TRAIN", icon: "dumbbell" },
+    { id: "word", label: "WORD", icon: "book" },
+    { id: "rules", label: "RULES", icon: "checksquare" },
   ];
   return (
-    <div style={{
-      position: "fixed", bottom: 0, left: 0, right: 0,
-      background: "rgba(10,10,10,0.95)",
-      backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-      borderTop: `1px solid ${C.border}`, zIndex: 50,
-      paddingBottom: "env(safe-area-inset-bottom)",
-    }}>
+    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(10,10,10,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: `1px solid ${C.border}`, zIndex: 50, paddingBottom: "env(safe-area-inset-bottom)" }}>
       <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", justifyContent: "space-around", padding: "8px 0 16px" }}>
         {items.map(item => {
           const active = tab === item.id;
           return (
-            <button key={item.id} onClick={() => setTab(item.id)}
-              style={{ background: "none", border: "none", cursor: "pointer",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                padding: "8px 6px", color: active ? C.accent : C.textFaint }}>
+            <button key={item.id} onClick={() => setTab(item.id)} className="tap" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 6px", color: active ? C.accent : C.textFaint }}>
               <Icon name={item.icon} size={20} strokeWidth={active ? 2.5 : 2} />
               <span className="display" style={{ fontSize: 10, letterSpacing: "0.1em" }}>{item.label}</span>
             </button>
@@ -522,6 +535,7 @@ function BottomNav({ tab, setTab }) {
     </div>
   );
 }
+
 function NowTab() {
   const day = getCurrentDay();
   const dayData = SCHEDULE[day];
@@ -531,15 +545,37 @@ function NowTab() {
   const dateStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   const minsLeft = current ? minutesUntilEnd(current) : 0;
-  const reading = getTodaysReading();
+  const reading = getTodaysReading(day);
   const [priorities, setPriorities] = useState(["", "", ""]);
+  const [doneFlags, setDoneFlags] = useState([false, false, false]);
   const [editingPri, setEditingPri] = useState(null);
   const [tempVal, setTempVal] = useState("");
-  const [doneFlags, setDoneFlags] = useState([false, false, false]);
+  const [focusAnchor, setFocusAnchor] = useState("");
+  const [microTasks, setMicroTasks] = useState(["", "", ""]);
+  const [microDone, setMicroDone] = useState([false, false, false]);
+  const [logs, setLogs] = useState(getRefocusLogs());
+  const blockKey = current ? `${todayKey()}:${current.start}:${current.name}` : `${todayKey()}:free`;
+  const policy = refocusSummary(day, now, logs);
+
   useEffect(() => {
     const data = safeGet(`priorities:${todayKey()}`);
     if (data) { setPriorities(data.list || ["", "", ""]); setDoneFlags(data.done || [false, false, false]); }
   }, []);
+  useEffect(() => {
+    const data = safeGet(`block:${blockKey}`);
+    setFocusAnchor(data?.anchor || "");
+    setMicroTasks(data?.micro || ["", "", ""]);
+    setMicroDone(data?.done || [false, false, false]);
+  }, [blockKey]);
+  useEffect(() => {
+    if (!current) return;
+    const lastKey = safeGet("last-block-key");
+    if (lastKey && lastKey !== blockKey && "Notification" in window && Notification.permission === "granted") {
+      new Notification("Sprint block transition", { body: `${current.name} is now active. Set the anchor and execute.` });
+    }
+    safeSet("last-block-key", blockKey);
+  }, [blockKey]);
+
   const savePriorities = (list, done) => safeSet(`priorities:${todayKey()}`, { list, done });
   const startEdit = (i) => { setEditingPri(i); setTempVal(priorities[i] || ""); };
   const commitEdit = () => {
@@ -551,9 +587,26 @@ function NowTab() {
     const newDone = [...doneFlags]; newDone[i] = !newDone[i];
     setDoneFlags(newDone); savePriorities(priorities, newDone);
   };
+  const saveBlock = (anchor, micro, done) => safeSet(`block:${blockKey}`, { anchor, micro, done });
+  const updateAnchor = (v) => { setFocusAnchor(v); saveBlock(v, microTasks, microDone); };
+  const updateMicro = (i, v) => {
+    const nextTasks = [...microTasks]; nextTasks[i] = v;
+    setMicroTasks(nextTasks); saveBlock(focusAnchor, nextTasks, microDone);
+  };
+  const toggleMicro = (i) => {
+    const nextDone = [...microDone]; nextDone[i] = !nextDone[i];
+    setMicroDone(nextDone); saveBlock(focusAnchor, microTasks, nextDone);
+  };
+  const useRefocus = () => {
+    if (!policy.allowed) return;
+    const nextLogs = [...logs, { ts: new Date().toISOString(), minutes: policy.minutes, window: policy.window, label: policy.title }];
+    setLogs(nextLogs);
+    safeSet(`refocus:${todayKey()}`, nextLogs);
+  };
+
   const blockType = current ? BLOCK_TYPES[current.type] : null;
   const nextType = next ? BLOCK_TYPES[next.type] : null;
-  const nowMins = new Date().getHours()*60 + new Date().getMinutes();
+  const mins = nowMinutes();
 
   return (
     <div className="slide-up" style={{ padding: "56px 20px 24px" }}>
@@ -567,20 +620,22 @@ function NowTab() {
           <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginTop: 4 }}>DAY MODE</div>
         </div>
       </div>
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: "rgba(20,20,20,0.5)", border: `1px solid ${C.border}` }}>
+
+      <RefocusCard policy={policy} logs={logs} onUse={useRefocus} compact />
+
+      <div className="card" style={{ marginTop: 16, padding: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>
           <Icon name="target" size={12} /> Today's Goal
         </div>
-        <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.4 }}>{dayData.goal}</div>
+        <div style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.45 }}>{dayData.goal}</div>
       </div>
+
       {current ? (
-        <div style={{ marginTop: 16, padding: 20, borderRadius: 24,
-          background: `linear-gradient(135deg, ${blockType.color}26, transparent)`,
-          border: `1px solid ${blockType.color}66`, position: "relative", overflow: "hidden" }}>
+        <div style={{ marginTop: 16, padding: 20, borderRadius: 24, background: `linear-gradient(135deg, ${blockType.color}26, transparent)`, border: `1px solid ${blockType.color}66`, position: "relative", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div className="pulse-ring" style={{ width: 8, height: 8, borderRadius: "50%", background: blockType.color }} />
-              <span className="display" style={{ fontSize: 12, letterSpacing: "0.18em", color: blockType.color }}>{blockType.label} · IN PROGRESS</span>
+              <span className="display" style={{ fontSize: 12, letterSpacing: "0.18em", color: blockType.color }}>{blockType.label} - IN PROGRESS</span>
             </div>
             <div className="mono" style={{ fontSize: 12, color: C.textFaint }}>{minsLeft}m left</div>
           </div>
@@ -590,21 +645,18 @@ function NowTab() {
             <span>{formatTime(current.start)}</span><span>{formatTime(current.end)}</span>
           </div>
           <div style={{ height: 6, background: C.surface, borderRadius: 3, overflow: "hidden" }}>
-            <div style={{ height: "100%", borderRadius: 3,
-              width: `${Math.min(100, current.progress*100).toFixed(0)}%`,
-              background: blockType.color, transition: "width 0.5s" }} />
+            <div style={{ height: "100%", borderRadius: 3, width: `${Math.min(100, current.progress*100).toFixed(0)}%`, background: blockType.color, transition: "width 0.5s" }} />
           </div>
         </div>
       ) : (
-        <div style={{ marginTop: 16, padding: 20, borderRadius: 24, border: `1px solid ${C.border}`, background: "rgba(20,20,20,0.3)" }}>
+        <div className="card" style={{ marginTop: 16, padding: 20, borderRadius: 24 }}>
           <div className="display" style={{ fontSize: 28, color: C.textMuted }}>No active block</div>
           <div style={{ fontSize: 14, color: C.textFaint, marginTop: 4 }}>Take a breath. Next block coming up.</div>
         </div>
       )}
+
       {next && (
-        <div style={{ marginTop: 12, padding: 16, borderRadius: 16,
-          background: "rgba(20,20,20,0.4)", border: `1px solid ${C.border}`,
-          display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="card" style={{ marginTop: 12, padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 2 }}>Next Up</div>
             <div className="display" style={{ fontSize: 20, color: C.text }}>{next.name}</div>
@@ -613,65 +665,76 @@ function NowTab() {
           <div style={{ width: 4, height: 48, borderRadius: 2, background: nextType?.color || C.textFaint }} />
         </div>
       )}
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 16,
-        background: `linear-gradient(135deg, ${reading.color}1a, transparent)`,
-        border: `1px solid ${reading.color}40` }}>
+
+      {current && (
+        <div style={{ marginTop: 16 }}>
+          <SectionTitle eyebrow="Block Guardrails" title="EXECUTE CLEAN" />
+          <div className="card" style={{ padding: 16 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {current.rules.map(rule => <Pill key={rule} color={blockType.color}>{rule}</Pill>)}
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Focus Anchor</div>
+              <input value={focusAnchor} onChange={e => updateAnchor(e.target.value)} placeholder="What is the single win for this block?" style={{ width: "100%", background: "rgba(26,26,26,0.7)", border: `1px solid ${C.border}`, borderRadius: 12, color: C.text, outline: "none", padding: "12px 14px", fontSize: 14 }} />
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Micro-Tasks</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button onClick={() => microTasks[i] && toggleMicro(i)} style={{ width: 24, height: 24, borderRadius: "50%", background: microDone[i] ? C.green : "transparent", border: `2px solid ${microDone[i] ? C.green : C.borderStrong}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {microDone[i] && <Icon name="check" size={14} color="#000" strokeWidth={3} />}
+                    </button>
+                    <input value={microTasks[i]} onChange={e => updateMicro(i, e.target.value)} placeholder={`Micro-task ${i+1}`} style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", borderBottom: `1px solid ${C.border}`, color: microDone[i] ? C.textFaint : C.text, textDecoration: microDone[i] ? "line-through" : "none", outline: "none", padding: "8px 0", fontSize: 14 }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 16, padding: 16, borderRadius: 16, background: `linear-gradient(135deg, ${reading.color}1a, transparent)`, border: `1px solid ${reading.color}40` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: reading.color, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>
-          <Icon name="book" size={12} /> Today's Word · {reading.theme}
+          <Icon name="book" size={12} /> Today's Word - {reading.theme}
         </div>
         <div className="serif" style={{ fontSize: 15, color: C.textMuted, lineHeight: 1.5, fontStyle: "italic", margin: "8px 0" }}>
-          "{reading.today.text.length > 140 ? reading.today.text.substring(0, 140) + '…' : reading.today.text}"
+          "{reading.today.text.length > 140 ? reading.today.text.substring(0, 140) + "..." : reading.today.text}"
         </div>
-        <div className="mono" style={{ fontSize: 11, color: reading.color }}>— {reading.today.ref}</div>
+        <div className="mono" style={{ fontSize: 11, color: reading.color }}>- {reading.today.ref}</div>
       </div>
+
       <div style={{ marginTop: 28, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h3 className="display" style={{ fontSize: 26, color: C.text, margin: 0 }}>TODAY'S TOP 3</h3>
         <span style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Tap to edit</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {[0,1,2].map(i => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12,
-            padding: 16, borderRadius: 16,
-            background: "rgba(20,20,20,0.4)", border: `1px solid ${C.border}` }}>
-            <button onClick={() => priorities[i] && toggleDone(i)}
-              style={{ width: 24, height: 24, borderRadius: "50%",
-                border: `2px solid ${doneFlags[i] ? C.green : C.textFaint}`,
-                background: doneFlags[i] ? C.green : "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", flexShrink: 0 }}>
+          <div key={i} className="card" style={{ display: "flex", alignItems: "center", gap: 12, padding: 16 }}>
+            <button onClick={() => priorities[i] && toggleDone(i)} style={{ width: 24, height: 24, borderRadius: "50%", border: `2px solid ${doneFlags[i] ? C.green : C.textFaint}`, background: doneFlags[i] ? C.green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               {doneFlags[i] && <Icon name="check" size={14} color="#000" strokeWidth={3} />}
             </button>
             {editingPri === i ? (
-              <input autoFocus value={tempVal} onChange={e => setTempVal(e.target.value)}
-                onBlur={commitEdit} onKeyDown={e => e.key === "Enter" && commitEdit()}
-                placeholder={`Priority ${i+1}`}
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C.text, fontSize: 15 }} />
+              <input autoFocus value={tempVal} onChange={e => setTempVal(e.target.value)} onBlur={commitEdit} onKeyDown={e => e.key === "Enter" && commitEdit()} placeholder={`Priority ${i+1}`} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: C.text, fontSize: 15 }} />
             ) : (
-              <button onClick={() => startEdit(i)}
-                style={{ flex: 1, textAlign: "left", background: "none", border: "none",
-                  color: doneFlags[i] ? C.textFaint : priorities[i] ? C.text : C.textFaint,
-                  textDecoration: doneFlags[i] ? "line-through" : "none",
-                  cursor: "pointer", fontSize: 15, padding: 0 }}>
-                {priorities[i] || `Priority ${i+1} — tap to set`}
+              <button onClick={() => startEdit(i)} style={{ flex: 1, textAlign: "left", background: "none", border: "none", color: doneFlags[i] ? C.textFaint : priorities[i] ? C.text : C.textFaint, textDecoration: doneFlags[i] ? "line-through" : "none", cursor: "pointer", fontSize: 15, padding: 0 }}>
+                {priorities[i] || `Priority ${i+1} - tap to set`}
               </button>
             )}
             <span className="display" style={{ fontSize: 22, color: C.veryFaint }}>0{i+1}</span>
           </div>
         ))}
       </div>
+
       <h3 className="display" style={{ fontSize: 26, color: C.text, margin: "32px 0 8px" }}>TODAY'S TIMELINE</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {dayData.blocks.map((b, i) => {
           const t = BLOCK_TYPES[b.type];
           const isCurrent = current?.index === i;
           const blockEnd = minutesFromTimeStr(b.end);
-          const isPast = blockEnd <= nowMins && blockEnd <= 24*60;
+          const isPast = blockEnd <= mins && blockEnd <= 24*60;
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12,
-              padding: 12, borderRadius: 12,
-              border: `1px solid ${isCurrent ? t.color + "60" : "transparent"}`,
-              background: isCurrent ? `${t.color}15` : "transparent",
-              opacity: isPast && !isCurrent ? 0.4 : 1 }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 12, border: `1px solid ${isCurrent ? t.color + "60" : "transparent"}`, background: isCurrent ? `${t.color}15` : "transparent", opacity: isPast && !isCurrent ? 0.4 : 1 }}>
               <div className="mono" style={{ fontSize: 11, color: C.textFaint, width: 56, flexShrink: 0 }}>{formatTime(b.start)}</div>
               <div style={{ width: 4, height: 32, borderRadius: 2, background: t.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -683,9 +746,35 @@ function NowTab() {
           );
         })}
       </div>
+
       <div style={{ marginTop: 32, textAlign: "center", fontSize: 10, color: C.veryFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>
-        Hard stop · 8 PM · Lights out · 10 PM
+        Discipline protects the hunger. Lights out at 10 PM.
       </div>
+    </div>
+  );
+}
+
+function RefocusCard({ policy, logs, onUse, compact = false }) {
+  const color = policy.tone === "open" ? C.green : policy.tone === "warn" ? C.amber : C.red;
+  return (
+    <div className="card" style={{ marginTop: compact ? 14 : 0, padding: compact ? 14 : 18, borderColor: color + "55", background: `linear-gradient(135deg, ${color}18, rgba(20,20,20,0.5))` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 42, height: 42, borderRadius: "50%", background: color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon name={policy.allowed ? "phone" : "lock"} size={20} color={color} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, color, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 3 }}>Refocus Status</div>
+          <div className="display" style={{ fontSize: compact ? 20 : 24, color: C.text, lineHeight: 1 }}>{policy.title}</div>
+          <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.35, marginTop: 3 }}>{policy.message}</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div className="mono" style={{ fontSize: 12, color: C.textFaint }}>{logs.length}/{policy.max || 0}</div>
+          <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.14em", marginTop: 2 }}>Used</div>
+        </div>
+      </div>
+      <button onClick={onUse} disabled={!policy.allowed} className="display tap" style={{ width: "100%", marginTop: 14, padding: "12px 14px", borderRadius: 12, border: "none", background: policy.allowed ? color : C.surfaceAlt, color: policy.allowed ? "#000" : C.textFaint, cursor: policy.allowed ? "pointer" : "default", fontSize: 14, letterSpacing: "0.12em" }}>
+        {policy.allowed ? `START ${policy.minutes} MIN UNBLOCK` : "LOCKED"}
+      </button>
     </div>
   );
 }
@@ -706,16 +795,9 @@ function WeekTab() {
           const isSelected = selectedIdx === i;
           const isToday = todayIdx === i;
           return (
-            <button key={i} onClick={() => setSelectedIdx(i)}
-              style={{ flexShrink: 0, width: 48, height: 64, borderRadius: 14,
-                background: isSelected ? C.accent : "transparent",
-                border: `1px solid ${isSelected ? C.accent : isToday ? C.accentBorder : C.border}`,
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", padding: 0 }}>
+            <button key={i} onClick={() => setSelectedIdx(i)} className="tap" style={{ flexShrink: 0, width: 48, height: 64, borderRadius: 14, background: isSelected ? C.accent : "transparent", border: `1px solid ${isSelected ? C.accent : isToday ? C.accentBorder : C.border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}>
               <span className="display" style={{ fontSize: 11, letterSpacing: "0.1em", color: isSelected ? "#000" : C.textFaint }}>{d}</span>
-              <span className="display" style={{ fontSize: 24, lineHeight: 1, marginTop: 4, color: isSelected ? "#000" : isToday ? C.accent : C.text }}>
-                {SCHEDULE[DAYS[i]].type[0]}
-              </span>
+              <span className="display" style={{ fontSize: 24, lineHeight: 1, marginTop: 4, color: isSelected ? "#000" : isToday ? C.accent : C.text }}>{SCHEDULE[DAYS[i]].type[0]}</span>
             </button>
           );
         })}
@@ -723,35 +805,36 @@ function WeekTab() {
       <div style={{ marginTop: 24, padding: 20, borderRadius: 24, background: "rgba(20,20,20,0.4)", border: `1px solid ${C.border}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div className="display" style={{ fontSize: 30, color: C.text }}>{DAY_LABELS[selectedIdx]}</div>
-          <div className="display" style={{ padding: "4px 12px", borderRadius: 999,
-            fontSize: 11, letterSpacing: "0.18em", background: C.surfaceAlt, color: C.textMuted }}>
-            {dayData.type}
-          </div>
+          <Pill color={C.accent}>{dayData.type}</Pill>
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 14, color: C.textMuted }}>
           <Icon name="target" size={14} color={C.accent} style={{ marginTop: 3, flexShrink: 0 }} />
           <span>{dayData.goal}</span>
         </div>
       </div>
+      {["monday","tuesday","wednesday","thursday"].includes(day) && (
+        <div className="card" style={{ marginTop: 16, padding: 16 }}>
+          <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Mon-Thu Non-Negotiables</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {MON_THU_RULES.map(rule => <Pill key={rule} color={C.accent}>{rule}</Pill>)}
+          </div>
+        </div>
+      )}
       <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
         {dayData.blocks.map((b, i) => {
           const t = BLOCK_TYPES[b.type];
           return (
-            <div key={i} style={{ padding: 16, borderRadius: 16, border: `1px solid ${C.border}`, background: "rgba(20,20,20,0.3)" }}>
+            <div key={i} className="card" style={{ padding: 16 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div className="mono" style={{ fontSize: 11, color: C.textFaint, width: 56, flexShrink: 0, paddingTop: 4 }}>
-                  {formatTime(b.start)}
-                </div>
+                <div className="mono" style={{ fontSize: 11, color: C.textFaint, width: 56, flexShrink: 0, paddingTop: 4 }}>{formatTime(b.start)}</div>
                 <div style={{ width: 4, alignSelf: "stretch", borderRadius: 2, background: t.color, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
                     <span className="display" style={{ fontSize: 17, color: C.text, lineHeight: 1 }}>{b.name}</span>
-                    <span className="display" style={{ fontSize: 9, padding: "2px 8px", borderRadius: 999,
-                      letterSpacing: "0.18em", background: t.color + "20", color: t.color }}>
-                      {t.label}
-                    </span>
+                    <Pill color={t.color}>{t.label}</Pill>
                   </div>
                   <div style={{ fontSize: 12, color: C.textFaint, lineHeight: 1.4 }}>{b.desc}</div>
+                  {!!b.rules?.length && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>{b.rules.slice(0, 4).map(r => <Pill key={r} color={t.color}>{r}</Pill>)}</div>}
                 </div>
               </div>
             </div>
@@ -761,12 +844,10 @@ function WeekTab() {
     </div>
   );
 }
+
 function TrainTab() {
   const dayName = getCurrentDay();
-  const [mode, setMode] = useState(() => {
-    if (["friday","saturday","sunday"].includes(dayName)) return "gym";
-    return "cal";
-  });
+  const [mode, setMode] = useState(() => ["friday","saturday","sunday"].includes(dayName) ? "gym" : "cal");
   const [activeGym, setActiveGym] = useState(null);
   if (activeGym) return <ActiveWorkout day={activeGym} onExit={() => setActiveGym(null)} />;
   return (
@@ -774,22 +855,15 @@ function TrainTab() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Body</div>
         <h1 className="display" style={{ fontSize: 56, color: C.text, lineHeight: 1, margin: "4px 0 0" }}>TRAIN</h1>
-        <p style={{ fontSize: 14, color: C.textFaint, marginTop: 8 }}>Daily calisthenics. Gym Fri/Sat/Sun. Mid-day runs Tue/Thu/Sun.</p>
+        <p style={{ fontSize: 14, color: C.textFaint, marginTop: 8 }}>Daily movement is part of the operating system. No screens during the work.</p>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 24, padding: 4, background: C.surface, borderRadius: 12 }}>
         {[{ id: "cal", label: "Calisthenics" }, { id: "gym", label: "Gym" }, { id: "run", label: "Runs" }].map(m => (
-          <button key={m.id} onClick={() => setMode(m.id)} className="display"
-            style={{ flex: 1, padding: "10px 8px", borderRadius: 9,
-              background: mode === m.id ? C.accent : "transparent",
-              color: mode === m.id ? "#000" : C.textMuted,
-              border: "none", cursor: "pointer",
-              fontSize: 13, letterSpacing: "0.1em" }}>
-            {m.label}
-          </button>
+          <button key={m.id} onClick={() => setMode(m.id)} className="display tap" style={{ flex: 1, padding: "10px 8px", borderRadius: 9, background: mode === m.id ? C.accent : "transparent", color: mode === m.id ? "#000" : C.textMuted, border: "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.1em" }}>{m.label}</button>
         ))}
       </div>
       {mode === "cal" && <CalisthenicsView dayName={dayName} />}
-      {mode === "gym" && <GymView dayName={dayName} onStart={(d) => setActiveGym(d)} />}
+      {mode === "gym" && <GymView dayName={dayName} onStart={setActiveGym} />}
       {mode === "run" && <RunView dayName={dayName} />}
     </div>
   );
@@ -797,101 +871,65 @@ function TrainTab() {
 
 function CalisthenicsView({ dayName }) {
   const calDays = ["monday","tuesday","wednesday","thursday"];
-  const initialDay = calDays.includes(dayName) ? dayName : "monday";
-  const [selected, setSelected] = useState(initialDay);
+  const [selected, setSelected] = useState(calDays.includes(dayName) ? dayName : "monday");
   const cal = CALISTHENICS[selected];
-  const isToday = dayName === selected;
-  const [completed, setCompleted] = useState(false);
   const [roundsDone, setRoundsDone] = useState(0);
   useEffect(() => {
     const data = safeGet(`cal-log:${selected}:${todayKey()}`);
-    if (data) { setCompleted(data.completed || false); setRoundsDone(data.rounds || 0); }
-    else { setCompleted(false); setRoundsDone(0); }
+    setRoundsDone(data?.rounds || 0);
   }, [selected]);
   const logRound = () => {
     const newRounds = Math.min(roundsDone + 1, cal.rounds);
     setRoundsDone(newRounds);
     safeSet(`cal-log:${selected}:${todayKey()}`, { rounds: newRounds, completed: newRounds >= cal.rounds });
-    if (newRounds >= cal.rounds) setCompleted(true);
   };
-  const reset = () => { setCompleted(false); setRoundsDone(0); safeDelete(`cal-log:${selected}:${todayKey()}`); };
+  const reset = () => { setRoundsDone(0); safeDelete(`cal-log:${selected}:${todayKey()}`); };
   return (
     <div>
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {calDays.map(d => {
-          const isSel = selected === d;
-          const isTd = dayName === d;
-          return (
-            <button key={d} onClick={() => setSelected(d)}
-              style={{ flex: 1, padding: 10, borderRadius: 12,
-                background: isSel ? C.accent : "transparent",
-                border: `1px solid ${isSel ? C.accent : isTd ? C.accentBorder : C.border}`,
-                cursor: "pointer", textAlign: "center" }}>
-              <div className="display" style={{ fontSize: 10, letterSpacing: "0.18em", color: isSel ? "#000" : C.textFaint }}>
-                {d.slice(0,3).toUpperCase()}
-              </div>
-              <div className="display" style={{ fontSize: 14, marginTop: 2, lineHeight: 1, color: isSel ? "#000" : C.text }}>
-                {CALISTHENICS[d].title}
-              </div>
-            </button>
-          );
-        })}
+        {calDays.map(d => (
+          <button key={d} onClick={() => setSelected(d)} className="tap" style={{ flex: 1, padding: 10, borderRadius: 12, background: selected === d ? C.accent : "transparent", border: `1px solid ${selected === d ? C.accent : dayName === d ? C.accentBorder : C.border}`, cursor: "pointer", textAlign: "center" }}>
+            <div className="display" style={{ fontSize: 10, letterSpacing: "0.18em", color: selected === d ? "#000" : C.textFaint }}>{d.slice(0,3).toUpperCase()}</div>
+            <div className="display" style={{ fontSize: 14, marginTop: 2, lineHeight: 1, color: selected === d ? "#000" : C.text }}>{CALISTHENICS[d].title}</div>
+          </button>
+        ))}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
         <h2 className="display" style={{ fontSize: 36, color: C.text, margin: 0 }}>{cal.title}</h2>
         <span className="mono" style={{ fontSize: 12, color: C.textFaint }}>{cal.duration}</span>
       </div>
       <p style={{ fontSize: 14, color: C.textMuted, margin: "0 0 16px" }}>{cal.subtitle}</p>
-      <div style={{ padding: 16, borderRadius: 16, marginBottom: 16,
-        background: completed ? C.greenDim : "rgba(20,20,20,0.5)",
-        border: `1px solid ${completed ? C.greenBorder : C.border}` }}>
-        <div style={{ fontSize: 10, color: completed ? C.green : C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>
-          {isToday ? "Today's Progress" : `Progress (${selected})`}
-        </div>
+      <div className="card" style={{ padding: 16, marginBottom: 16, borderColor: roundsDone >= cal.rounds ? C.greenBorder : C.border }}>
+        <div style={{ fontSize: 10, color: roundsDone >= cal.rounds ? C.green : C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Progress</div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", gap: 8 }}>
             {Array.from({ length: cal.rounds }).map((_, i) => (
-              <div key={i} style={{ width: 36, height: 36, borderRadius: "50%",
-                border: `2px solid ${i < roundsDone ? C.green : i === roundsDone ? C.accent : C.borderStrong}`,
-                background: i < roundsDone ? "rgba(34,197,94,0.2)" : "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {i < roundsDone ? <Icon name="check" size={16} color={C.green} strokeWidth={3} /> :
-                  <span className="display" style={{ fontSize: 14, color: C.textFaint }}>{i+1}</span>}
+              <div key={i} style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${i < roundsDone ? C.green : i === roundsDone ? C.accent : C.borderStrong}`, background: i < roundsDone ? "rgba(34,197,94,0.2)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {i < roundsDone ? <Icon name="check" size={16} color={C.green} strokeWidth={3} /> : <span className="display" style={{ fontSize: 14, color: C.textFaint }}>{i+1}</span>}
               </div>
             ))}
           </div>
-          {completed ? (
-            <button onClick={reset} style={{ background: "transparent", border: `1px solid ${C.border}`, color: C.textFaint, padding: "8px 12px", borderRadius: 10, cursor: "pointer", fontSize: 12 }}>
-              Reset
-            </button>
-          ) : (
-            <button onClick={logRound} className="display"
-              style={{ background: C.accent, color: "#000", border: "none", padding: "10px 14px", borderRadius: 10, cursor: "pointer", fontSize: 13, letterSpacing: "0.1em" }}>
-              + ROUND {roundsDone+1}
-            </button>
-          )}
+          {roundsDone >= cal.rounds ? <button onClick={reset} style={{ background: "transparent", border: `1px solid ${C.border}`, color: C.textFaint, padding: "8px 12px", borderRadius: 10, cursor: "pointer", fontSize: 12 }}>Reset</button> :
+            <button onClick={logRound} className="display tap" style={{ background: C.accent, color: "#000", border: "none", padding: "10px 14px", borderRadius: 10, cursor: "pointer", fontSize: 13, letterSpacing: "0.1em" }}>+ ROUND {roundsDone + 1}</button>}
         </div>
       </div>
-      <div style={{ padding: 14, borderRadius: 12, marginBottom: 16, background: "rgba(20,20,20,0.3)", border: `1px solid ${C.border}` }}>
+      <div className="card" style={{ padding: 14, marginBottom: 16 }}>
         <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>Warm-up</div>
         <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.4 }}>{cal.warmup}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>
-          {cal.rounds} Rounds Of:
-        </div>
+        <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>{cal.rounds} Rounds Of</div>
         {cal.exercises.map((ex, i) => (
-          <div key={i} style={{ padding: 14, borderRadius: 14, background: "rgba(20,20,20,0.4)", border: `1px solid ${C.border}`,
-            display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div key={i} className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
               <span className="display" style={{ fontSize: 18, color: C.veryFaint, width: 20 }}>{String(i+1).padStart(2,"0")}</span>
               <div className="display" style={{ fontSize: 16, color: C.text, lineHeight: 1 }}>{ex.name}</div>
             </div>
-            <div className="mono" style={{ fontSize: 12, color: C.accent }}>{ex.target}</div>
+            <div className="mono" style={{ fontSize: 12, color: C.accent, textAlign: "right" }}>{ex.target}</div>
           </div>
         ))}
       </div>
-      <div style={{ padding: 14, borderRadius: 12, background: "rgba(20,20,20,0.3)", border: `1px solid ${C.border}` }}>
+      <div className="card" style={{ padding: 14 }}>
         <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>Notes</div>
         <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5 }}>{cal.notes}</div>
       </div>
@@ -901,44 +939,27 @@ function CalisthenicsView({ dayName }) {
 
 function GymView({ dayName, onStart }) {
   const gymDays = ["friday","saturday","sunday"];
-  const initialDay = gymDays.includes(dayName) ? dayName : "friday";
-  const [selected, setSelected] = useState(initialDay);
+  const [selected, setSelected] = useState(gymDays.includes(dayName) ? dayName : "friday");
   const w = GYM_WORKOUTS[selected];
-  const isToday = dayName === selected;
   const [history, setHistory] = useState({});
-  useEffect(() => { const data = safeGet(`workout-prs:${selected}`); setHistory(data || {}); }, [selected]);
+  useEffect(() => { setHistory(safeGet(`workout-prs:${selected}`) || {}); }, [selected]);
   return (
     <div>
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {gymDays.map(d => {
-          const isSel = selected === d;
-          const isTd = dayName === d;
-          return (
-            <button key={d} onClick={() => setSelected(d)}
-              style={{ flex: 1, padding: 10, borderRadius: 12,
-                background: isSel ? C.accent : "transparent",
-                border: `1px solid ${isSel ? C.accent : isTd ? C.accentBorder : C.border}`,
-                cursor: "pointer", textAlign: "center" }}>
-              <div className="display" style={{ fontSize: 10, letterSpacing: "0.18em", color: isSel ? "#000" : C.textFaint }}>
-                {d.slice(0,3).toUpperCase()}
-              </div>
-              <div className="display" style={{ fontSize: 16, marginTop: 2, lineHeight: 1, color: isSel ? "#000" : C.text }}>
-                {GYM_WORKOUTS[d].title}
-              </div>
-            </button>
-          );
-        })}
+        {gymDays.map(d => (
+          <button key={d} onClick={() => setSelected(d)} className="tap" style={{ flex: 1, padding: 10, borderRadius: 12, background: selected === d ? C.accent : "transparent", border: `1px solid ${selected === d ? C.accent : dayName === d ? C.accentBorder : C.border}`, cursor: "pointer", textAlign: "center" }}>
+            <div className="display" style={{ fontSize: 10, letterSpacing: "0.18em", color: selected === d ? "#000" : C.textFaint }}>{d.slice(0,3).toUpperCase()}</div>
+            <div className="display" style={{ fontSize: 16, marginTop: 2, lineHeight: 1, color: selected === d ? "#000" : C.text }}>{GYM_WORKOUTS[d].title}</div>
+          </button>
+        ))}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
         <h2 className="display" style={{ fontSize: 36, color: C.text, margin: 0 }}>{w.title}</h2>
         <span className="mono" style={{ fontSize: 12, color: C.textFaint }}>{w.duration}</span>
       </div>
       <p style={{ fontSize: 14, color: C.textMuted, margin: "0 0 16px" }}>{w.subtitle}</p>
-      <button onClick={() => onStart(selected)} className="display"
-        style={{ width: "100%", padding: 18, borderRadius: 16, background: C.accent, color: "#000", border: "none",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          cursor: "pointer", fontSize: 16, letterSpacing: "0.1em", marginBottom: 16 }}>
-        <span>{isToday ? "START TODAY'S WORKOUT" : `START ${w.title} WORKOUT`}</span>
+      <button onClick={() => onStart(selected)} className="display tap" style={{ width: "100%", padding: 18, borderRadius: 16, background: C.accent, color: "#000", border: "none", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontSize: 16, letterSpacing: "0.1em", marginBottom: 16 }}>
+        <span>{dayName === selected ? "START TODAY'S WORKOUT" : `START ${w.title} WORKOUT`}</span>
         <Icon name="play" size={18} color="#000" />
       </button>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -946,25 +967,15 @@ function GymView({ dayName, onStart }) {
         {w.exercises.map((ex, i) => {
           const last = history[ex.id];
           return (
-            <div key={ex.id} style={{ padding: 14, borderRadius: 14, background: "rgba(20,20,20,0.4)", border: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div key={ex.id} className="card" style={{ padding: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                 <span className="display" style={{ fontSize: 18, color: C.veryFaint, width: 20 }}>{String(i+1).padStart(2,"0")}</span>
                 <div>
                   <div className="display" style={{ fontSize: 16, color: C.text, lineHeight: 1 }}>{ex.name}</div>
-                  <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginTop: 3 }}>
-                    {ex.sets} × {ex.repsLow === ex.repsHigh ? ex.repsLow : `${ex.repsLow}–${ex.repsHigh}`} reps
-                  </div>
+                  <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginTop: 3 }}>{ex.sets} x {ex.repsLow === ex.repsHigh ? ex.repsLow : `${ex.repsLow}-${ex.repsHigh}`} reps</div>
                 </div>
               </div>
-              {last ? (
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Last</div>
-                  <div className="mono" style={{ fontSize: 13, color: C.accent }}>
-                    {last.topWeight}{ex.id === "plank" ? "s" : "lb"}
-                  </div>
-                </div>
-              ) : (<Icon name="circle" size={14} color={C.veryFaint} />)}
+              {last ? <div style={{ textAlign: "right" }}><div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Last</div><div className="mono" style={{ fontSize: 13, color: C.accent }}>{last.topWeight}lb</div></div> : <Icon name="circle" size={14} color={C.veryFaint} />}
             </div>
           );
         })}
@@ -975,38 +986,23 @@ function GymView({ dayName, onStart }) {
 
 function RunView({ dayName }) {
   const runDays = ["tuesday","thursday","sunday"];
-  const initialDay = runDays.includes(dayName) ? dayName : "tuesday";
-  const [selected, setSelected] = useState(initialDay);
+  const [selected, setSelected] = useState(runDays.includes(dayName) ? dayName : "tuesday");
   const r = RUNS[selected];
   const [completed, setCompleted] = useState(false);
-  useEffect(() => { const data = safeGet(`run-log:${selected}:${todayKey()}`); setCompleted(!!data?.completed); }, [selected]);
+  useEffect(() => setCompleted(!!safeGet(`run-log:${selected}:${todayKey()}`)?.completed), [selected]);
   const markDone = () => { setCompleted(true); safeSet(`run-log:${selected}:${todayKey()}`, { completed: true, ts: new Date().toISOString() }); };
   const reset = () => { setCompleted(false); safeDelete(`run-log:${selected}:${todayKey()}`); };
   return (
     <div>
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {runDays.map(d => {
-          const isSel = selected === d;
-          const isTd = dayName === d;
-          return (
-            <button key={d} onClick={() => setSelected(d)}
-              style={{ flex: 1, padding: 10, borderRadius: 12,
-                background: isSel ? C.accent : "transparent",
-                border: `1px solid ${isSel ? C.accent : isTd ? C.accentBorder : C.border}`,
-                cursor: "pointer", textAlign: "center" }}>
-              <div className="display" style={{ fontSize: 10, letterSpacing: "0.18em", color: isSel ? "#000" : C.textFaint }}>
-                {d.slice(0,3).toUpperCase()}
-              </div>
-              <div className="display" style={{ fontSize: 14, marginTop: 2, lineHeight: 1, color: isSel ? "#000" : C.text }}>
-                {RUNS[d].type}
-              </div>
-            </button>
-          );
-        })}
+        {runDays.map(d => (
+          <button key={d} onClick={() => setSelected(d)} className="tap" style={{ flex: 1, padding: 10, borderRadius: 12, background: selected === d ? C.accent : "transparent", border: `1px solid ${selected === d ? C.accent : dayName === d ? C.accentBorder : C.border}`, cursor: "pointer", textAlign: "center" }}>
+            <div className="display" style={{ fontSize: 10, letterSpacing: "0.18em", color: selected === d ? "#000" : C.textFaint }}>{d.slice(0,3).toUpperCase()}</div>
+            <div className="display" style={{ fontSize: 14, marginTop: 2, lineHeight: 1, color: selected === d ? "#000" : C.text }}>{RUNS[d].type}</div>
+          </button>
+        ))}
       </div>
-      <div style={{ padding: 20, borderRadius: 20,
-        background: `linear-gradient(135deg, ${BLOCK_TYPES.run.color}26, transparent)`,
-        border: `1px solid ${BLOCK_TYPES.run.color}60`, marginBottom: 16 }}>
+      <div style={{ padding: 20, borderRadius: 20, background: `linear-gradient(135deg, ${BLOCK_TYPES.run.color}26, transparent)`, border: `1px solid ${BLOCK_TYPES.run.color}60`, marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
           <div className="display" style={{ fontSize: 36, color: C.text, lineHeight: 1 }}>{r.type}</div>
           <span className="mono" style={{ fontSize: 14, color: C.accent }}>{r.duration} min</span>
@@ -1025,114 +1021,10 @@ function RunView({ dayName }) {
           <button onClick={reset} style={{ marginTop: 12, background: "transparent", border: "none", color: C.textFaint, cursor: "pointer", fontSize: 12 }}>Reset</button>
         </div>
       ) : (
-        <button onClick={markDone} className="display"
-          style={{ width: "100%", padding: 18, borderRadius: 16, background: C.accent, color: "#000", border: "none",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            cursor: "pointer", fontSize: 16, letterSpacing: "0.1em" }}>
-          <Icon name="check" size={18} color="#000" strokeWidth={3} />
-          MARK RUN COMPLETE
+        <button onClick={markDone} className="display tap" style={{ width: "100%", padding: 18, borderRadius: 16, background: C.accent, color: "#000", border: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", fontSize: 16, letterSpacing: "0.1em" }}>
+          <Icon name="check" size={18} color="#000" strokeWidth={3} /> MARK RUN COMPLETE
         </button>
       )}
-    </div>
-  );
-}
-function WordTab() {
-  const dayName = getCurrentDay();
-  const [selected, setSelected] = useState(dayName);
-  const [readMap, setReadMap] = useState({});
-  const reading = (() => {
-    const plan = READING_PLAN[selected];
-    const week = getReadingWeek();
-    return { ...plan, today: plan.readings[week], weekInCycle: week };
-  })();
-  useEffect(() => {
-    const m = {};
-    DAYS.forEach(d => { m[d] = !!safeGet(`word-log:${d}:${todayKey()}`); });
-    setReadMap(m);
-  }, []);
-  const isReadToday = readMap[selected];
-  const markRead = () => { safeSet(`word-log:${selected}:${todayKey()}`, { ts: new Date().toISOString() }); setReadMap({ ...readMap, [selected]: true }); };
-  const unmark = () => { safeDelete(`word-log:${selected}:${todayKey()}`); setReadMap({ ...readMap, [selected]: false }); };
-  return (
-    <div className="slide-up" style={{ padding: "56px 20px 24px" }}>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Daily Reading</div>
-        <h1 className="display" style={{ fontSize: 56, color: C.text, lineHeight: 1, margin: "4px 0 0" }}>THE WORD</h1>
-        <p style={{ fontSize: 13, color: C.textFaint, marginTop: 8 }}>A 4-week cycle. Each weekday's theme maps to that day's work.</p>
-      </div>
-      <div className="no-scrollbar" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginBottom: 16 }}>
-        {DAYS.map((d, i) => {
-          const isSel = selected === d;
-          const isTd = dayName === d;
-          const isRead = readMap[d];
-          const plan = READING_PLAN[d];
-          return (
-            <button key={d} onClick={() => setSelected(d)}
-              style={{ flexShrink: 0, width: 48, height: 64, borderRadius: 14,
-                background: isSel ? plan.color : "transparent",
-                border: `1px solid ${isSel ? plan.color : isTd ? C.accentBorder : C.border}`,
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", padding: 0, position: "relative" }}>
-              <span className="display" style={{ fontSize: 11, letterSpacing: "0.1em", color: isSel ? "#000" : C.textFaint }}>
-                {DAY_LABELS[i]}
-              </span>
-              {isRead && <div style={{ position: "absolute", top: 6, right: 6, width: 6, height: 6, borderRadius: "50%", background: isSel ? "#000" : C.green }} />}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ padding: 20, borderRadius: 20,
-        background: `linear-gradient(135deg, ${reading.color}1a, transparent)`,
-        border: `1px solid ${reading.color}40`, marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: reading.color, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>
-          {DAY_LABELS[DAYS.indexOf(selected)]} · Week {reading.weekInCycle + 1} of 4
-        </div>
-        <div className="display" style={{ fontSize: 36, color: C.text, lineHeight: 1, marginBottom: 4 }}>{reading.theme}</div>
-        <div style={{ fontSize: 13, color: C.textMuted }}>{reading.subtitle}</div>
-      </div>
-      <div style={{ padding: 24, borderRadius: 20, background: "rgba(20,20,20,0.5)", border: `1px solid ${C.border}`, marginBottom: 16 }}>
-        <div className="mono" style={{ fontSize: 13, color: reading.color, marginBottom: 16, letterSpacing: "0.05em" }}>
-          {reading.today.ref}
-        </div>
-        <div className="serif" style={{ fontSize: 17, color: C.text, lineHeight: 1.7, fontStyle: "italic" }}>
-          "{reading.today.text}"
-        </div>
-      </div>
-      <div style={{ padding: 18, borderRadius: 16, background: `${reading.color}10`, border: `1px solid ${reading.color}30`, marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: reading.color, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6 }}>Apply It Today</div>
-        <div style={{ fontSize: 14, color: C.text, lineHeight: 1.5 }}>{reading.today.apply}</div>
-      </div>
-      {isReadToday ? (
-        <div style={{ padding: 18, borderRadius: 16, textAlign: "center", background: C.greenDim, border: `1px solid ${C.greenBorder}` }}>
-          <Icon name="check" size={24} color={C.green} strokeWidth={3} style={{ display: "block", margin: "0 auto 6px" }} />
-          <div className="display" style={{ fontSize: 18, color: C.text }}>READ FOR TODAY</div>
-          <button onClick={unmark} style={{ marginTop: 8, background: "transparent", border: "none", color: C.textFaint, cursor: "pointer", fontSize: 12 }}>Unmark</button>
-        </div>
-      ) : (
-        <button onClick={markRead} className="display"
-          style={{ width: "100%", padding: 18, borderRadius: 16, background: reading.color, color: "#000", border: "none",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", fontSize: 16, letterSpacing: "0.1em" }}>
-          <Icon name="check" size={18} color="#000" strokeWidth={3} />
-          MARK AS READ
-        </button>
-      )}
-      <div style={{ marginTop: 32 }}>
-        <h3 className="display" style={{ fontSize: 22, color: C.text, margin: "0 0 12px", letterSpacing: "0.1em" }}>4-WEEK CYCLE</h3>
-        <div style={{ fontSize: 12, color: C.textFaint, marginBottom: 12 }}>Same theme each weekday, different passage each week. After 4 weeks, the cycle repeats.</div>
-        {DAYS.map((d, i) => {
-          const p = READING_PLAN[d];
-          return (
-            <div key={d} style={{ padding: 12, borderRadius: 10, display: "flex", alignItems: "center", gap: 12,
-              borderBottom: i < 6 ? `1px solid ${C.border}` : "none" }}>
-              <div style={{ width: 4, height: 32, borderRadius: 2, background: p.color, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div className="display" style={{ fontSize: 14, color: C.text, lineHeight: 1 }}>{DAY_LABELS[i]} · {p.theme}</div>
-                <div style={{ fontSize: 11, color: C.textFaint, marginTop: 2 }}>{p.subtitle}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -1179,32 +1071,22 @@ function ActiveWorkout({ day, onExit }) {
     const w = parseFloat(currentWeight) || 0;
     const r = parseInt(currentReps) || 0;
     if (r === 0) return;
-    const exSets = setLogs[ex.id] || [];
-    const newSets = [...exSets, { weight: w, reps: r }];
+    const newSets = [...(setLogs[ex.id] || []), { weight: w, reps: r }];
     const newLogs = { ...setLogs, [ex.id]: newSets };
     setSetLogs(newLogs); saveDraft(newLogs); setShowRestTimer(true);
   };
   const undoLast = () => {
     const exSets = setLogs[ex.id] || [];
-    if (exSets.length === 0) return;
+    if (!exSets.length) return;
     const newLogs = { ...setLogs, [ex.id]: exSets.slice(0, -1) };
     setSetLogs(newLogs); saveDraft(newLogs);
-  };
-  const nextExercise = () => {
-    if (exerciseIdx < workout.exercises.length - 1) {
-      const newIdx = exerciseIdx + 1;
-      setExerciseIdx(newIdx); saveDraft(setLogs, newIdx); setShowRestTimer(false);
-    } else { finishWorkout(); }
-  };
-  const prevExercise = () => {
-    if (exerciseIdx > 0) { const newIdx = exerciseIdx - 1; setExerciseIdx(newIdx); saveDraft(setLogs, newIdx); }
   };
   const finishWorkout = () => {
     safeSet(`workout-log:${day}:${todayKey()}`, { setLogs, completed: new Date().toISOString() });
     const newPrs = { ...history };
     workout.exercises.forEach(exer => {
       const sets = setLogs[exer.id];
-      if (!sets || sets.length === 0) return;
+      if (!sets || !sets.length) return;
       const topWeight = Math.max(...sets.map(s => s.weight));
       const topSet = sets.reduce((best, s) => (s.weight > best.weight || (s.weight === best.weight && s.reps > best.reps) ? s : best), sets[0]);
       newPrs[exer.id] = { topWeight, topReps: topSet.reps, sets, date: todayKey() };
@@ -1212,6 +1094,15 @@ function ActiveWorkout({ day, onExit }) {
     safeSet(`workout-prs:${day}`, newPrs);
     safeDelete(`workout-draft:${day}:${todayKey()}`);
     onExit();
+  };
+  const nextExercise = () => {
+    if (exerciseIdx < workout.exercises.length - 1) {
+      const newIdx = exerciseIdx + 1;
+      setExerciseIdx(newIdx); saveDraft(setLogs, newIdx); setShowRestTimer(false);
+    } else finishWorkout();
+  };
+  const prevExercise = () => {
+    if (exerciseIdx > 0) { const newIdx = exerciseIdx - 1; setExerciseIdx(newIdx); saveDraft(setLogs, newIdx); }
   };
   const exHistory = history[ex.id];
   const allSetsDone = completedSets >= totalSets;
@@ -1221,126 +1112,62 @@ function ActiveWorkout({ day, onExit }) {
   return (
     <div className="slide-up" style={{ padding: "56px 20px 128px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <button onClick={onExit} style={{ background: "none", border: "none", color: C.textFaint, fontSize: 14, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: 0 }}>
-          <Icon name="chevronleft" size={18} /> Exit
-        </button>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Exercise</div>
-          <div className="mono" style={{ fontSize: 14, color: C.textMuted }}>{exerciseIdx + 1} / {workout.exercises.length}</div>
-        </div>
-        <button onClick={finishWorkout} className="display" style={{ background: "none", border: "none", color: C.accent, fontSize: 14, letterSpacing: "0.1em", cursor: "pointer", padding: 0 }}>
-          FINISH
-        </button>
-      </div>
-      <div style={{ textAlign: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>{workout.title} DAY</div>
+        <button onClick={onExit} style={{ background: "none", border: "none", color: C.textFaint, fontSize: 14, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: 0 }}><Icon name="chevronleft" size={18} /> Exit</button>
+        <div style={{ textAlign: "center" }}><div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Exercise</div><div className="mono" style={{ fontSize: 14, color: C.textMuted }}>{exerciseIdx + 1} / {workout.exercises.length}</div></div>
+        <button onClick={finishWorkout} className="display" style={{ background: "none", border: "none", color: C.accent, fontSize: 14, letterSpacing: "0.1em", cursor: "pointer", padding: 0 }}>FINISH</button>
       </div>
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <div className="display" style={{ fontSize: 44, color: C.text, lineHeight: 1 }}>{ex.name}</div>
-        <div style={{ fontSize: 14, color: C.textFaint, marginTop: 6 }}>
-          {totalSets} sets × {ex.repsLow === ex.repsHigh ? ex.repsLow : `${ex.repsLow}–${ex.repsHigh}`} reps
-        </div>
+        <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>{workout.title} DAY</div>
+        <div className="display" style={{ fontSize: 44, color: C.text, lineHeight: 1, marginTop: 8 }}>{ex.name}</div>
+        <div style={{ fontSize: 14, color: C.textFaint, marginTop: 6 }}>{totalSets} sets x {ex.repsLow === ex.repsHigh ? ex.repsLow : `${ex.repsLow}-${ex.repsHigh}`} reps</div>
       </div>
       <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 24 }}>
         {Array.from({ length: totalSets }).map((_, i) => {
           const set = setLogs[ex.id]?.[i];
           return (
-            <div key={i} style={{ width: 48, height: 48, borderRadius: "50%",
-              border: `2px solid ${set ? C.green : i === completedSets ? C.accent : C.borderStrong}`,
-              background: set ? "rgba(34,197,94,0.15)" : i === completedSets ? "rgba(255,107,53,0.15)" : "transparent",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-              {set ? (<>
-                <span className="mono" style={{ fontSize: 9, color: C.green, lineHeight: 1 }}>{set.weight}{ex.id === "plank" ? "s" : ""}</span>
-                <span className="mono" style={{ fontSize: 9, color: C.green, lineHeight: 1, marginTop: 1 }}>{set.reps}{ex.id !== "plank" ? "r" : ""}</span>
-              </>) : (<span className="display" style={{ fontSize: 16, color: C.textFaint }}>{i+1}</span>)}
+            <div key={i} style={{ width: 48, height: 48, borderRadius: "50%", border: `2px solid ${set ? C.green : i === completedSets ? C.accent : C.borderStrong}`, background: set ? "rgba(34,197,94,0.15)" : i === completedSets ? "rgba(255,107,53,0.15)" : "transparent", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              {set ? <><span className="mono" style={{ fontSize: 9, color: C.green, lineHeight: 1 }}>{set.weight}</span><span className="mono" style={{ fontSize: 9, color: C.green, lineHeight: 1, marginTop: 1 }}>{set.reps}r</span></> : <span className="display" style={{ fontSize: 16, color: C.textFaint }}>{i+1}</span>}
             </div>
           );
         })}
       </div>
       {exHistory && (
-        <div style={{ padding: 14, borderRadius: 16, marginBottom: 20, background: "rgba(20,20,20,0.5)", border: `1px solid ${C.border}`,
-          display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Last ({exHistory.date})</div>
-            <div className="mono" style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>Top: {exHistory.topWeight}{ex.id === "plank" ? "s" : "lb"} × {exHistory.topReps} reps</div>
-          </div>
-          {!setLogs[ex.id]?.length && (() => {
-            const s = getSuggestion(exHistory, ex);
-            return (
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em" }}>Try</div>
-                <div className="mono" style={{ fontSize: 13, color: C.text, marginTop: 4 }}>{s.weight}{ex.id === "plank" ? "s" : "lb"} × {s.reps}</div>
-              </div>
-            );
-          })()}
+        <div className="card" style={{ padding: 14, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div><div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Last ({exHistory.date})</div><div className="mono" style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>Top: {exHistory.topWeight}lb x {exHistory.topReps}</div></div>
+          {!setLogs[ex.id]?.length && (() => { const s = getSuggestion(exHistory, ex); return <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em" }}>Try</div><div className="mono" style={{ fontSize: 13, color: C.text, marginTop: 4 }}>{s.weight}lb x {s.reps}</div></div>; })()}
         </div>
       )}
       {!allSetsDone ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={inputBoxStyle}>
-            <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>
-              {ex.id === "plank" ? "Seconds" : "Weight (lb)"}
-            </div>
+            <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Weight (lb)</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button style={stepBtnStyle} onClick={() => setCurrentWeight(String(Math.max(0, parseFloat(currentWeight || 0) - (ex.increment || 5))))}>
-                <Icon name="minus" size={20} />
-              </button>
-              <input inputMode="decimal" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="0" className="display"
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", textAlign: "center", fontSize: 44, color: C.text, minWidth: 0 }} />
-              <button style={stepBtnStyle} onClick={() => setCurrentWeight(String(parseFloat(currentWeight || 0) + (ex.increment || 5)))}>
-                <Icon name="plus" size={20} />
-              </button>
+              <button style={stepBtnStyle} onClick={() => setCurrentWeight(String(Math.max(0, parseFloat(currentWeight || 0) - (ex.increment || 5))))}><Icon name="minus" size={20} /></button>
+              <input inputMode="decimal" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="0" className="display" style={{ flex: 1, background: "transparent", border: "none", outline: "none", textAlign: "center", fontSize: 44, color: C.text, minWidth: 0 }} />
+              <button style={stepBtnStyle} onClick={() => setCurrentWeight(String(parseFloat(currentWeight || 0) + (ex.increment || 5)))}><Icon name="plus" size={20} /></button>
             </div>
           </div>
           <div style={inputBoxStyle}>
-            <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>
-              {ex.id === "plank" ? "Reps (target sec above)" : "Reps"}
-            </div>
+            <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Reps</div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button style={stepBtnStyle} onClick={() => setCurrentReps(String(Math.max(0, parseInt(currentReps || 0) - 1)))}>
-                <Icon name="minus" size={20} />
-              </button>
-              <input inputMode="numeric" value={currentReps} onChange={e => setCurrentReps(e.target.value)} placeholder="0" className="display"
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", textAlign: "center", fontSize: 44, color: C.text, minWidth: 0 }} />
-              <button style={stepBtnStyle} onClick={() => setCurrentReps(String(parseInt(currentReps || 0) + 1))}>
-                <Icon name="plus" size={20} />
-              </button>
+              <button style={stepBtnStyle} onClick={() => setCurrentReps(String(Math.max(0, parseInt(currentReps || 0) - 1)))}><Icon name="minus" size={20} /></button>
+              <input inputMode="numeric" value={currentReps} onChange={e => setCurrentReps(e.target.value)} placeholder="0" className="display" style={{ flex: 1, background: "transparent", border: "none", outline: "none", textAlign: "center", fontSize: 44, color: C.text, minWidth: 0 }} />
+              <button style={stepBtnStyle} onClick={() => setCurrentReps(String(parseInt(currentReps || 0) + 1))}><Icon name="plus" size={20} /></button>
             </div>
           </div>
-          <button onClick={logSet} className="display"
-            style={{ width: "100%", padding: 18, borderRadius: 16, background: C.accent, color: "#000", border: "none",
-              fontSize: 16, letterSpacing: "0.1em",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
-            <Icon name="check" size={18} color="#000" strokeWidth={3} />
-            LOG SET {completedSets + 1}
-          </button>
-          {completedSets > 0 && (
-            <button onClick={undoLast} style={{ width: "100%", padding: 10, borderRadius: 16, background: "transparent", border: "none", color: C.textFaint, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <Icon name="rotateccw" size={13} /> Undo last set
-            </button>
-          )}
+          <button onClick={logSet} className="display tap" style={{ width: "100%", padding: 18, borderRadius: 16, background: C.accent, color: "#000", border: "none", fontSize: 16, letterSpacing: "0.1em", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}><Icon name="check" size={18} color="#000" strokeWidth={3} /> LOG SET {completedSets + 1}</button>
+          {completedSets > 0 && <button onClick={undoLast} style={{ width: "100%", padding: 10, borderRadius: 16, background: "transparent", border: "none", color: C.textFaint, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><Icon name="rotateccw" size={13} /> Undo last set</button>}
         </div>
       ) : (
         <div style={{ padding: 24, borderRadius: 16, textAlign: "center", background: C.greenDim, border: `1px solid ${C.greenBorder}` }}>
           <Icon name="trophy" size={32} color={C.green} style={{ display: "block", margin: "0 auto 8px" }} />
           <div className="display" style={{ fontSize: 24, color: C.text }}>EXERCISE COMPLETE</div>
-          <div style={{ fontSize: 14, color: C.textMuted, marginTop: 4 }}>Move on or review</div>
         </div>
       )}
       {showRestTimer && !allSetsDone && <RestTimer onClose={() => setShowRestTimer(false)} />}
       <div style={{ marginTop: 24, display: "flex", gap: 8 }}>
-        <button onClick={prevExercise} disabled={exerciseIdx === 0}
-          style={{ flex: 1, padding: 12, borderRadius: 16, border: `1px solid ${C.border}`, background: "transparent",
-            color: C.textMuted, opacity: exerciseIdx === 0 ? 0.3 : 1,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-            cursor: exerciseIdx === 0 ? "default" : "pointer", fontSize: 14 }}>
-          <Icon name="chevronleft" size={16} /> Previous
-        </button>
-        <button onClick={nextExercise}
-          style={{ flex: 1, padding: 12, borderRadius: 16, border: `1px solid ${C.border}`, background: "transparent",
-            color: C.text, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer", fontSize: 14 }}>
-          {isLastEx ? "Finish" : "Next"} <Icon name="chevronright" size={16} />
-        </button>
+        <button onClick={prevExercise} disabled={exerciseIdx === 0} style={{ flex: 1, padding: 12, borderRadius: 16, border: `1px solid ${C.border}`, background: "transparent", color: C.textMuted, opacity: exerciseIdx === 0 ? 0.3 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, cursor: exerciseIdx === 0 ? "default" : "pointer", fontSize: 14 }}><Icon name="chevronleft" size={16} /> Previous</button>
+        <button onClick={nextExercise} style={{ flex: 1, padding: 12, borderRadius: 16, border: `1px solid ${C.border}`, background: "transparent", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer", fontSize: 14 }}>{isLastEx ? "Finish" : "Next"} <Icon name="chevronright" size={16} /></button>
       </div>
     </div>
   );
@@ -1357,151 +1184,246 @@ function RestTimer({ onClose }) {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return (
-    <div className="slide-up" style={{ position: "fixed", bottom: 100, left: 16, right: 16,
-      maxWidth: 448, margin: "0 auto", padding: 16, borderRadius: 16,
-      background: C.surface, border: `1px solid ${C.accentBorder}`,
-      display: "flex", alignItems: "center", gap: 12, zIndex: 40 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em" }}>Rest</div>
-        <div className="display" style={{ fontSize: 28, color: C.text, lineHeight: 1, marginTop: 2 }}>
-          {mins}:{String(secs).padStart(2, "0")}
-        </div>
-      </div>
+    <div className="slide-up" style={{ position: "fixed", bottom: 100, left: 16, right: 16, maxWidth: 448, margin: "0 auto", padding: 16, borderRadius: 16, background: C.surface, border: `1px solid ${C.accentBorder}`, display: "flex", alignItems: "center", gap: 12, zIndex: 40 }}>
+      <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em" }}>Rest</div><div className="display" style={{ fontSize: 28, color: C.text, lineHeight: 1, marginTop: 2 }}>{mins}:{String(secs).padStart(2, "0")}</div></div>
       <button onClick={() => setSeconds(s => s + 30)} style={{ padding: "8px 12px", borderRadius: 12, background: C.surfaceAlt, border: "none", color: C.textMuted, fontSize: 12, cursor: "pointer" }}>+30s</button>
-      <button onClick={() => setRunning(!running)} style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, border: "none", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-        <Icon name={running ? "pause" : "play"} size={16} color="#000" />
-      </button>
-      <button onClick={onClose} style={{ width: 40, height: 40, borderRadius: "50%", background: C.surfaceAlt, border: "none", color: C.textFaint, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-        <Icon name="x" size={16} />
-      </button>
+      <button onClick={() => setRunning(!running)} style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, border: "none", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Icon name={running ? "pause" : "play"} size={16} color="#000" /></button>
+      <button onClick={onClose} style={{ width: 40, height: 40, borderRadius: "50%", background: C.surfaceAlt, border: "none", color: C.textFaint, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Icon name="x" size={16} /></button>
     </div>
   );
 }
 
-function HabitsTab() {
-  const [checks, setChecks] = useState({});
-  const [streak, setStreak] = useState(0);
-  const [sleepData, setSleepData] = useState({ down: "", up: "" });
+function WordTab() {
+  const dayName = getCurrentDay();
+  const [selected, setSelected] = useState(dayName);
+  const [readMap, setReadMap] = useState({});
+  const reading = getTodaysReading(selected);
   useEffect(() => {
-    const todayChecks = safeGet(`habits:${todayKey()}`);
-    if (todayChecks) setChecks(todayChecks);
-    const sleep = safeGet(`sleep:${todayKey()}`);
-    if (sleep) setSleepData(sleep);
+    const m = {};
+    DAYS.forEach(d => { m[d] = !!safeGet(`word-log:${d}:${todayKey()}`); });
+    setReadMap(m);
+  }, []);
+  const isReadToday = readMap[selected];
+  const markRead = () => { safeSet(`word-log:${selected}:${todayKey()}`, { ts: new Date().toISOString() }); setReadMap({ ...readMap, [selected]: true }); };
+  const unmark = () => { safeDelete(`word-log:${selected}:${todayKey()}`); setReadMap({ ...readMap, [selected]: false }); };
+  return (
+    <div className="slide-up" style={{ padding: "56px 20px 24px" }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Daily Reading</div>
+        <h1 className="display" style={{ fontSize: 56, color: C.text, lineHeight: 1, margin: "4px 0 0" }}>THE WORD</h1>
+        <p style={{ fontSize: 13, color: C.textFaint, marginTop: 8 }}>A 4-week cycle. Each weekday theme maps to the work of that day.</p>
+      </div>
+      <div className="no-scrollbar" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginBottom: 16 }}>
+        {DAYS.map((d, i) => {
+          const isSel = selected === d;
+          const isTd = dayName === d;
+          const isRead = readMap[d];
+          const plan = READING_PLAN[d];
+          return (
+            <button key={d} onClick={() => setSelected(d)} className="tap" style={{ flexShrink: 0, width: 48, height: 64, borderRadius: 14, background: isSel ? plan.color : "transparent", border: `1px solid ${isSel ? plan.color : isTd ? C.accentBorder : C.border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0, position: "relative" }}>
+              <span className="display" style={{ fontSize: 11, letterSpacing: "0.1em", color: isSel ? "#000" : C.textFaint }}>{DAY_LABELS[i]}</span>
+              {isRead && <div style={{ position: "absolute", top: 6, right: 6, width: 6, height: 6, borderRadius: "50%", background: isSel ? "#000" : C.green }} />}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ padding: 20, borderRadius: 20, background: `linear-gradient(135deg, ${reading.color}1a, transparent)`, border: `1px solid ${reading.color}40`, marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: reading.color, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>{DAY_LABELS[DAYS.indexOf(selected)]} - Week {reading.weekInCycle + 1} of 4</div>
+        <div className="display" style={{ fontSize: 36, color: C.text, lineHeight: 1, marginBottom: 4 }}>{reading.theme}</div>
+        <div style={{ fontSize: 13, color: C.textMuted }}>{reading.subtitle}</div>
+      </div>
+      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+        <div className="mono" style={{ fontSize: 13, color: reading.color, marginBottom: 16, letterSpacing: "0.05em" }}>{reading.today.ref}</div>
+        <div className="serif" style={{ fontSize: 17, color: C.text, lineHeight: 1.7, fontStyle: "italic" }}>"{reading.today.text}"</div>
+      </div>
+      <div style={{ padding: 18, borderRadius: 16, background: `${reading.color}10`, border: `1px solid ${reading.color}30`, marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: reading.color, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6 }}>Apply It Today</div>
+        <div style={{ fontSize: 14, color: C.text, lineHeight: 1.5 }}>{reading.today.apply}</div>
+      </div>
+      {isReadToday ? (
+        <div style={{ padding: 18, borderRadius: 16, textAlign: "center", background: C.greenDim, border: `1px solid ${C.greenBorder}` }}>
+          <Icon name="check" size={24} color={C.green} strokeWidth={3} style={{ display: "block", margin: "0 auto 6px" }} />
+          <div className="display" style={{ fontSize: 18, color: C.text }}>READ FOR TODAY</div>
+          <button onClick={unmark} style={{ marginTop: 8, background: "transparent", border: "none", color: C.textFaint, cursor: "pointer", fontSize: 12 }}>Unmark</button>
+        </div>
+      ) : (
+        <button onClick={markRead} className="display tap" style={{ width: "100%", padding: 18, borderRadius: 16, background: reading.color, color: "#000", border: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", fontSize: 16, letterSpacing: "0.1em" }}><Icon name="check" size={18} color="#000" strokeWidth={3} /> MARK AS READ</button>
+      )}
+      <div className="card" style={{ marginTop: 24, padding: 20, borderColor: C.gold + "44" }}>
+        <div style={{ fontSize: 10, color: C.gold, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Psalm 27:10</div>
+        <p className="serif" style={{ fontSize: 15, color: C.textMuted, lineHeight: 1.6, fontStyle: "italic", margin: 0 }}>"For my father and my mother have forsaken me, but the Lord will take me in."</p>
+      </div>
+    </div>
+  );
+}
+
+function RulesTab() {
+  const day = getCurrentDay();
+  const [checks, setChecks] = useState({});
+  const [logs, setLogs] = useState(getRefocusLogs());
+  const [sleepData, setSleepData] = useState({ down: "", up: "" });
+  const [streak, setStreak] = useState(0);
+  useEffect(() => {
+    setChecks(safeGet(`rules:${todayKey()}`) || {});
+    setSleepData(safeGet(`sleep:${todayKey()}`) || { down: "", up: "" });
     let s = 0;
     for (let i = 0; i < 60; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      const c = safeGet(`habits:${k}`);
-      const dayIdx = d.getDay();
-      const required = HARD_RULES.filter(r => !r.sundayOnly || dayIdx === 0);
+      const k = todayKey(d);
+      const c = safeGet(`rules:${k}`);
       if (!c) break;
-      const allDone = required.every(r => c[r.id]);
+      const allDone = DAILY_RULES.every(r => c[r.id]);
       if (!allDone) break;
       s++;
     }
     setStreak(s);
   }, []);
+  const policy = refocusSummary(day, new Date(), logs);
+  const grade = getGrade(checks, day, logs);
   const toggle = (id) => {
-    const newChecks = { ...checks, [id]: !checks[id] };
-    setChecks(newChecks); safeSet(`habits:${todayKey()}`, newChecks);
+    const next = { ...checks, [id]: !checks[id] };
+    setChecks(next); safeSet(`rules:${todayKey()}`, next);
   };
   const saveSleep = (val) => { setSleepData(val); safeSet(`sleep:${todayKey()}`, val); };
-  const calcSleepHours = () => {
+  const useRefocus = () => {
+    if (!policy.allowed) return;
+    const nextLogs = [...logs, { ts: new Date().toISOString(), minutes: policy.minutes, window: policy.window, label: policy.title }];
+    setLogs(nextLogs);
+    safeSet(`refocus:${todayKey()}`, nextLogs);
+  };
+  const resetRefocus = () => {
+    setLogs([]);
+    safeDelete(`refocus:${todayKey()}`);
+  };
+  const sleep = (() => {
     if (!sleepData.down || !sleepData.up) return null;
     const [dh, dm] = sleepData.down.split(":").map(Number);
     const [uh, um] = sleepData.up.split(":").map(Number);
     let mins = (uh*60 + um) - (dh*60 + dm);
     if (mins < 0) mins += 24*60;
     return { h: Math.floor(mins/60), m: mins%60, total: mins };
-  };
-  const sleep = calcSleepHours();
-  const dayIdx = new Date().getDay();
-  const visibleRules = HARD_RULES.filter(r => !r.sundayOnly || dayIdx === 0);
-  const completedToday = visibleRules.filter(r => checks[r.id]).length;
+  })();
+
   return (
     <div className="slide-up" style={{ padding: "56px 20px 24px" }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Daily Check</div>
-        <h1 className="display" style={{ fontSize: 56, color: C.text, lineHeight: 1, margin: "4px 0 0" }}>HARD RULES</h1>
+        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Founder Focus OS</div>
+        <h1 className="display" style={{ fontSize: 56, color: C.text, lineHeight: 1, margin: "4px 0 0" }}>RULES</h1>
       </div>
-      <div style={{ padding: 20, borderRadius: 24,
-        background: "linear-gradient(135deg, rgba(255,107,53,0.2), rgba(255,107,53,0.05) 60%, transparent)",
-        border: `1px solid ${C.accentBorder}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+      <div style={{ padding: 20, borderRadius: 24, background: "linear-gradient(135deg, rgba(255,107,53,0.2), rgba(255,107,53,0.05) 60%, transparent)", border: `1px solid ${C.accentBorder}` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>Current Streak</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span className="display" style={{ fontSize: 64, color: C.text, lineHeight: 1 }}>{streak}</span>
-              <span className="display" style={{ fontSize: 20, color: C.textMuted }}>{streak === 1 ? "DAY" : "DAYS"}</span>
+            <div style={{ fontSize: 10, color: C.accent, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 4 }}>Today's Grade</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+              <span className="display" style={{ fontSize: 72, color: C.text, lineHeight: 1 }}>{grade.letter}</span>
+              <span className="display" style={{ fontSize: 24, color: C.textMuted }}>{grade.score}%</span>
             </div>
           </div>
-          <Icon name="flame" size={48} color={C.accent} strokeWidth={1.5} />
+          <div style={{ textAlign: "right" }}>
+            <Icon name="shield" size={44} color={C.accent} strokeWidth={1.5} />
+            <div className="mono" style={{ fontSize: 12, color: C.textFaint, marginTop: 8 }}>{grade.done}/{grade.total} rules</div>
+            <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.14em", marginTop: 3 }}>{streak} day streak</div>
+          </div>
         </div>
-        <div style={{ marginTop: 12, fontSize: 12, color: C.textMuted }}>{completedToday} of {visibleRules.length} hit today</div>
+        <div style={{ marginTop: 12, fontSize: 12, color: C.textMuted, lineHeight: 1.45 }}>
+          Integrity score is self-reported. Do not mark a rule you did not actually live.
+        </div>
       </div>
-      <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 8 }}>
-        {visibleRules.map(rule => {
-          const done = checks[rule.id];
-          return (
-            <button key={rule.id} onClick={() => toggle(rule.id)}
-              style={{ width: "100%", padding: 16, borderRadius: 16,
-                background: done ? C.greenDim : "rgba(20,20,20,0.4)",
-                border: `1px solid ${done ? C.greenBorder : C.border}`,
-                display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%",
-                background: done ? C.green : C.surfaceAlt,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {done ? <Icon name="check" size={18} color="#000" strokeWidth={3} /> : <Icon name={rule.icon} size={18} color={C.textMuted} />}
+
+      <div style={{ marginTop: 16 }}>
+        <RefocusCard policy={policy} logs={logs} onUse={useRefocus} />
+        {!!logs.length && (
+          <div className="card" style={{ marginTop: 8, padding: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em" }}>Today's Unblocks</div>
+              <button onClick={resetRefocus} style={{ background: "transparent", border: "none", color: C.textFaint, fontSize: 12, cursor: "pointer" }}>Reset</button>
+            </div>
+            {logs.map((log, i) => (
+              <div key={log.ts} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+                <span style={{ fontSize: 13, color: C.textMuted }}>{log.label}</span>
+                <span className="mono" style={{ fontSize: 12, color: C.accent }}>{new Date(log.ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} / {log.minutes}m</span>
               </div>
-              <span style={{ flex: 1, fontSize: 15, color: done ? C.text : C.textMuted }}>{rule.label}</span>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: done ? C.green : C.veryFaint }} />
-            </button>
-          );
-        })}
+            ))}
+          </div>
+        )}
       </div>
-      <div style={{ marginTop: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <Icon name="moon" size={16} color={C.textMuted} />
-          <h3 className="display" style={{ fontSize: 22, color: C.text, letterSpacing: "0.1em", margin: 0 }}>SLEEP LOG</h3>
+
+      <div style={{ marginTop: 24 }}>
+        <SectionTitle eyebrow="Daily Disciplines" title="CHECKLIST" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {DAILY_RULES.map(rule => {
+            const done = checks[rule.id];
+            return (
+              <button key={rule.id} onClick={() => toggle(rule.id)} className="tap" style={{ width: "100%", padding: 16, borderRadius: 16, background: done ? C.greenDim : "rgba(20,20,20,0.4)", border: `1px solid ${done ? C.greenBorder : C.border}`, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left" }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: done ? C.green : C.surfaceAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {done ? <Icon name="check" size={18} color="#000" strokeWidth={3} /> : <Icon name={rule.icon} size={18} color={C.textMuted} />}
+                </div>
+                <span style={{ flex: 1, fontSize: 15, color: done ? C.text : C.textMuted }}>{rule.label}</span>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: done ? C.green : C.veryFaint }} />
+              </button>
+            );
+          })}
         </div>
-        <div style={{ padding: 20, borderRadius: 24, background: "rgba(20,20,20,0.4)", border: `1px solid ${C.border}` }}>
+      </div>
+
+      <div style={{ marginTop: 32 }}>
+        <SectionTitle eyebrow="Phone Rules" title="REFOCUS LIMITS" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[
+            ["Mon-Thu", "Lunch optional 10 min with 1 unblock. 8:00-8:30 PM one 30-min unblock. Social locked outside those windows."],
+            ["Friday", "No social 5:00 AM-5:30 PM. After 5:30 PM: max 3 unblocks, 30 min each, 1 hour between."],
+            ["Saturday", "No social 6:00 AM-noon. After noon: max 3 unblocks, 30 min each, 1 hour between."],
+            ["Sunday", "No social 6:00 AM-noon. Noon-6:00 PM: light social, max 2 unblocks. No social after 6."],
+          ].map(([label, text]) => (
+            <div key={label} className="card" style={{ padding: 14, display: "flex", gap: 12 }}>
+              <div className="display" style={{ width: 72, flexShrink: 0, fontSize: 18, color: C.accent }}>{label}</div>
+              <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.45 }}>{text}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 32 }}>
+        <SectionTitle eyebrow="Sleep Log" title="LIGHTS OUT" />
+        <div className="card" style={{ padding: 20, borderRadius: 24 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Lights Out</div>
-              <input type="time" value={sleepData.down} onChange={e => saveSleep({ ...sleepData, down: e.target.value })}
-                className="mono" style={{ width: "100%", padding: "8px 12px", borderRadius: 12, background: "rgba(26,26,26,0.5)", border: `1px solid ${C.border}`, color: C.text, outline: "none" }} />
+              <input type="time" value={sleepData.down} onChange={e => saveSleep({ ...sleepData, down: e.target.value })} className="mono" style={{ width: "100%", padding: "8px 12px", borderRadius: 12, background: "rgba(26,26,26,0.5)", border: `1px solid ${C.border}`, color: C.text, outline: "none" }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>Woke Up</div>
-              <input type="time" value={sleepData.up} onChange={e => saveSleep({ ...sleepData, up: e.target.value })}
-                className="mono" style={{ width: "100%", padding: "8px 12px", borderRadius: 12, background: "rgba(26,26,26,0.5)", border: `1px solid ${C.border}`, color: C.text, outline: "none" }} />
+              <input type="time" value={sleepData.up} onChange={e => saveSleep({ ...sleepData, up: e.target.value })} className="mono" style={{ width: "100%", padding: "8px 12px", borderRadius: 12, background: "rgba(26,26,26,0.5)", border: `1px solid ${C.border}`, color: C.text, outline: "none" }} />
             </div>
           </div>
           {sleep && (
-            <div style={{ paddingTop: 12, borderTop: `1px solid ${C.border}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ paddingTop: 12, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 12, color: C.textFaint }}>Total</span>
               <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                <span className="display" style={{ fontSize: 24, color: C.text, lineHeight: 1 }}>
-                  {sleep.h}<span style={{ color: C.textFaint, fontSize: 14 }}>h</span> {sleep.m}<span style={{ color: C.textFaint, fontSize: 14 }}>m</span>
-                </span>
-                {sleep.total < 7*60 ? (
-                  <span style={{ marginLeft: 8, fontSize: 10, color: C.red, textTransform: "uppercase", letterSpacing: "0.18em" }}>Below floor</span>
-                ) : (
-                  <span style={{ marginLeft: 8, fontSize: 10, color: C.green, textTransform: "uppercase", letterSpacing: "0.18em" }}>7h+ ✓</span>
-                )}
+                <span className="display" style={{ fontSize: 24, color: C.text, lineHeight: 1 }}>{sleep.h}<span style={{ color: C.textFaint, fontSize: 14 }}>h</span> {sleep.m}<span style={{ color: C.textFaint, fontSize: 14 }}>m</span></span>
+                {sleep.total < 7*60 ? <span style={{ marginLeft: 8, fontSize: 10, color: C.red, textTransform: "uppercase", letterSpacing: "0.18em" }}>Below floor</span> : <span style={{ marginLeft: 8, fontSize: 10, color: C.green, textTransform: "uppercase", letterSpacing: "0.18em" }}>7h+ OK</span>}
               </div>
             </div>
           )}
         </div>
       </div>
-      <div style={{ marginTop: 32, marginBottom: 16, padding: 20, borderRadius: 24, border: `1px solid ${C.border}`, background: "rgba(20,20,20,0.2)" }}>
-        <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8 }}>The Why</div>
-        <p className="serif" style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.6, fontStyle: "italic", margin: 0 }}>
-          "He who is faithful in a very little is also faithful in much."
-        </p>
-        <div className="mono" style={{ fontSize: 11, color: C.textFaint, marginTop: 6 }}>— Luke 16:10</div>
+
+      <div style={{ marginTop: 32 }}>
+        <SectionTitle eyebrow="Identity" title="HUNGER" />
+        <div className="card" style={{ padding: 20, borderRadius: 24 }}>
+          {IDENTITY_LINES.map((line, i) => <p key={i} className="serif" style={{ fontSize: 14, color: C.textMuted, lineHeight: 1.6, fontStyle: "italic", margin: i ? "10px 0 0" : 0 }}>"{line}"</p>)}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 16, marginBottom: 16 }} className="card">
+        <div style={{ padding: 20 }}>
+          <div style={{ fontSize: 10, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 10 }}>Long-Term Execution</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {LONG_TERM_GOALS.map(goal => <Pill key={goal} color={C.gold}>{goal}</Pill>)}
+          </div>
+        </div>
       </div>
     </div>
   );
