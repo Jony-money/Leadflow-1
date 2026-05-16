@@ -1,3 +1,63 @@
+function BizPulse() {
+  const [data, setData] = useState(null);
+  
+  useEffect(() => {
+    const load = () => {
+      try {
+        setData({
+          calls: parseInt(localStorage.getItem('zms_today_calls') || '0'),
+          nextMeeting: localStorage.getItem('zms_next_meeting'),
+          nextClient: localStorage.getItem('zms_next_client') || '',
+          outreach: JSON.parse(localStorage.getItem('zms_outreach_today') || '{}'),
+          overdue: parseInt(localStorage.getItem('zms_overdue') || '0'),
+        });
+      } catch {}
+    };
+    load();
+    // Re-read every 60s in case LeadFlow is open in another tab
+    const i = setInterval(load, 60000);
+    window.addEventListener('storage', load); // fires when LeadFlow writes
+    return () => { clearInterval(i); window.removeEventListener('storage', load); };
+  }, []);
+
+  if (!data) return null;
+  
+  const nextMtg = data.nextMeeting ? new Date(data.nextMeeting) : null;
+  const minsUntil = nextMtg ? Math.round((nextMtg - new Date()) / 60000) : null;
+  
+  return (
+    <div style={{ marginTop: 16, padding: 16, borderRadius: 16,
+      background: 'rgba(20,20,20,0.5)', border: `1px solid ${C.border}` }}>
+      <div className="display" style={{ fontSize: 11, letterSpacing: '0.18em',
+        color: C.accent, marginBottom: 10 }}>ZMS LIVE</div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 80 }}>
+          <div style={{ fontSize: 9, color: C.textFaint, textTransform: 'uppercase', letterSpacing: '0.18em' }}>Calls today</div>
+          <div className="display" style={{ fontSize: 28, color: C.text }}>{data.calls}</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 80 }}>
+          <div style={{ fontSize: 9, color: C.textFaint, textTransform: 'uppercase', letterSpacing: '0.18em' }}>Emails sent</div>
+          <div className="display" style={{ fontSize: 28, color: C.text }}>{data.outreach.emails || 0}</div>
+        </div>
+        {data.overdue > 0 && (
+          <div style={{ flex: 1, minWidth: 80 }}>
+            <div style={{ fontSize: 9, color: C.red, textTransform: 'uppercase', letterSpacing: '0.18em' }}>Overdue</div>
+            <div className="display" style={{ fontSize: 28, color: C.red }}>{data.overdue}</div>
+          </div>
+        )}
+      </div>
+      {minsUntil !== null && minsUntil > 0 && minsUntil < 180 && (
+        <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 10,
+          background: minsUntil < 30 ? 'rgba(255,107,53,0.15)' : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${minsUntil < 30 ? C.accentBorder : C.border}` }}>
+          <span style={{ fontSize: 12, color: minsUntil < 30 ? C.accent : C.textMuted }}>
+            {minsUntil < 30 ? '🔴' : '📅'} {data.nextClient} in {minsUntil}m
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
