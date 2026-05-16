@@ -1,3 +1,123 @@
+
+// Add in initNotifications() after the SW is ready
+function scheduleDailyReminders() {
+  const now = new Date();
+  const today = now.toDateString();
+  
+  const times = [
+    { h:6,  m:0,  id:'builder-outreach', title:'📞 Builder outreach open', body:'6–7:30 AM — builders up early, checking phones. Hit your list.' },
+    { h:9,  m:45, id:'morning-calls',    title:'📅 Sales meetings block', body:'All booked calls go here. Check LeadFlow pipeline.' },
+    { h:17, m:0,  id:'detailer-outreach',title:'📞 Detailer outreach open', body:'5–6:30 PM — detailers done for the day, on their phones.' },
+    { h:19, m:30, id:'pipeline-review',  title:'📊 Pipeline review', body:'Update statuses, tag follow-ups, set tomorrow\'s calls.' },
+    { h:21, m:45, id:'lights-out-warn',  title:'💤 Lights out in 15 min', body:'Hard rule. Phone outside bedroom. 5 AM is coming.' },
+  ];
+  
+  times.forEach(t => {
+    const fireAt = new Date(); fireAt.setHours(t.h, t.m, 0, 0);
+    if (fireAt <= now) return; // already passed
+    scheduleNotification({ id: t.id + ':' + today, title: t.title, body: t.body, fireAt: fireAt.getTime() });
+  });
+}
+scheduleDailyReminders();
+// === ZMS NOTIFICATIONS ===
+// Add this once, near the top of your script section
+
+async function initNotifications() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  if (Notification.permission === 'denied') return;
+  if (Notification.permission !== 'granted') {
+    const result = await Notification.requestPermission();
+    if (result !== 'granted') return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.register('sw.js');
+    window._swReg = reg;
+    console.log('ZMS notifications ready');
+  } catch (e) {
+    console.warn('SW registration failed:', e);
+  }
+}
+
+function scheduleNotification({ id, title, body, fireAt, url = '' }) {
+  if (!window._swReg?.active) return;
+  window._swReg.active.postMessage({ type: 'SCHEDULE', id, title, body, fireAt, url });
+}
+
+// Call this after appointments are saved or updated
+function scheduleApptReminders(appt) {
+  if (!appt.date || !appt.time) return;
+  const apptTime = new Date(appt.date + 'T' + appt.time).getTime();
+  const now = Date.now();
+  const apptFile = window.location.href;
+
+  // 1 day before
+  const oneDayBefore = apptTime - 86400000;
+  if (oneDayBefore > now) {
+    scheduleNotification({
+      id: `appt-1d-${appt.id}`,
+      title: `📅 Tomorrow: ${appt.client}`,
+      body: `Meeting at ${appt.time}. Confirm they're still on.`,
+      fireAt: oneDayBefore,
+      url: apptFile,
+    });
+  }
+  // 1 hour before
+  const oneHourBefore = apptTime - 3600000;
+  if (oneHourBefore > now) {
+    scheduleNotification({
+      id: `appt-1h-${appt.id}`,
+      title: `🔴 1 hour: ${appt.client}`,
+      body: `Meeting in 60 min. Open LeadFlow to prep.`,
+      fireAt: oneHourBefore,
+      url: apptFile,
+    });
+  }
+  // 10 minutes before
+  const tenMinBefore = apptTime - 600000;
+  if (tenMinBefore > now) {
+    scheduleNotification({
+      id: `appt-10m-${appt.id}`,
+      title: `⚡ 10 min: ${appt.client}`,
+      body: appt.meetLink ? `Join: ${appt.meetLink}` : 'Get on the call.',
+      fireAt: tenMinBefore,
+      url: apptFile,
+    });
+  }
+}
+
+// Schedule block transitions for Sprint's schedule
+function scheduleDayBlocks(schedule) {
+  const today = new Date().toDateString();
+  schedule.forEach(block => {
+    const [h, m] = block.start.split(':').map(Number);
+    const fireAt = new Date();
+    fireAt.setHours(h, m, 0, 0);
+    if (fireAt.toDateString() !== today) return;
+    if (fireAt.getTime() <= Date.now() + 60000) return; // don't fire for current/past blocks
+    const t = BLOCK_TYPES[block.type];
+    scheduleNotification({
+      id: `block-${block.start}`,
+      title: `${t?.label || 'Next block'}: ${block.name}`,
+      body: block.desc?.slice(0, 80) || '',
+      fireAt: fireAt.getTime(),
+    });
+  });
+}
+
+// Call initNotifications() at boot
+initNotifications().then(() => {
+  // In LeadFlow: schedule reminders for today's appts
+  if (typeof appts !== 'undefined') {
+    const today = new Date().toISOString().slice(0,10);
+    appts.filter(a => a.date === today).forEach(scheduleApptReminders);
+  }
+  // In Sprint: schedule today's block transitions
+  if (typeof SCHEDULE !== 'undefined' && typeof getCurrentDay !== 'undefined') {
+    const day = getCurrentDay();
+    if (SCHEDULE[day]) scheduleDayBlocks(SCHEDULE[day].blocks);
+  }
+});
+
 // Service Worker for ZMS notifications
 // Handles scheduled reminders even when the tab is in the background
 
