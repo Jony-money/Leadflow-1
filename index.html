@@ -1,3 +1,29 @@
+// Service Worker for ZMS notifications
+// Handles scheduled reminders even when the tab is in the background
+
+const CHANNEL = 'zms-notify';
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'SCHEDULE') return;
+  const { id, title, body, fireAt } = event.data;
+  const delay = fireAt - Date.now();
+  if (delay < 0) return;
+  setTimeout(() => {
+    self.registration.showNotification(title, {
+      body,
+      icon: '/favicon.ico',
+      tag: id, // prevents duplicates
+      requireInteraction: delay < 5 * 60000, // sticky if < 5 min out
+      data: { url: event.data.url || '/' },
+    });
+  }, delay);
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url;
+  if (url) event.waitUntil(clients.openWindow(url));
+});
 function BizPulse() {
   const [data, setData] = useState(null);
   
