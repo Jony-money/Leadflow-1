@@ -1435,3 +1435,30 @@ document.getElementById("boot").classList.add("gone");
 </script>
 </body>
 </html>
+// Add this anywhere LeadFlow updates its state (in updateDash() works fine)
+function syncToSprint() {
+  const today = new Date().toISOString().slice(0,10);
+  
+  // How many calls are booked today
+  const todayCalls = appts.filter(a => a.date === today && !a.outcome).length;
+  localStorage.setItem('zms_today_calls', todayCalls);
+  
+  // Next meeting ISO string (so Sprint can show countdown)
+  const now = new Date();
+  const upcoming = appts
+    .filter(a => a.date && new Date(a.date + 'T' + (a.time || '00:00')) > now)
+    .sort((a,b) => new Date(a.date+'T'+a.time) - new Date(b.date+'T'+b.time))[0];
+  if (upcoming) {
+    localStorage.setItem('zms_next_meeting', upcoming.date + 'T' + upcoming.time);
+    localStorage.setItem('zms_next_client', upcoming.client || '');
+  }
+  
+  // Today's prospecting progress (for Sprint's Now tab)
+  const pros = lsGet('lf_prospecting') || {};
+  const todayPros = pros[today] || {};
+  localStorage.setItem('zms_outreach_today', JSON.stringify(todayPros));
+  
+  // Overdue task count
+  const overdueCount = tasks.filter(t => !t.done && t.dueDate && daysUntil(t.dueDate) < 0).length;
+  localStorage.setItem('zms_overdue', overdueCount);
+}
